@@ -1,0 +1,14 @@
+name: meteo-murro-api
+services:
+  - type: web
+    name: api
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: WEATHER_API_KEY
+        sync: false
+      - key: STATION_ID
+        value: IBARIA12
+      - key: NODE_ENV
+        value: production

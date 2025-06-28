@@ -1,0 +1,38 @@
+Il progetto sembra essere una dashboard meteo con le seguenti caratteristiche:
+
+Specifiche del Frontend (React)
+Una dashboard moderna e responsive per visualizzare dati meteo
+Mostra dati attuali e statistiche min/max della giornata
+Icone dinamiche in base alle condizioni meteo
+Layout con riquadri per diverse metriche meteo (temperatura, umidità, pressione, vento, ecc.)
+Gestione robusta di valori nulli/undefined/NaN
+Aggiornamento automatico dei dati
+Interfaccia in italiano
+Visualizzazione del quartiere (neighborhood) e descrizione del tempo
+Specifiche del Backend (Node.js/Express)
+API per recuperare dati da Weather Underground (stazione IBARIA12)
+Endpoint unificato che restituisce dati attuali e statistiche
+Calcolo di valori min/max per diverse metriche
+Supporto a diversi nomi di campo per le proprietà min/max
+Gestione di fallback quando mancano valori specifici
+Logging dettagliato per debugging
+Richieste specifiche
+Calcolo dei valori min/max come il minimo/massimo tra tutti i record della giornata
+Visualizzazione delle statistiche min/max sotto ogni riquadro
+Colori/icone dinamici in base alle condizioni meteo
+Se hai accesso alla cronologia delle conversazioni, potresti trovare il prompt originale lì. Altrimenti, se hai bisogno di ricrearlo o modificarlo, queste specifiche possono servire come base.
+
+Per un prompt completo, potresti utilizzare:
+
+"Creare una dashboard meteo con frontend in React e backend Node.js/Express che mostri dati attuali e 
+statistiche min/max della giornata per una stazione Weather Underground. La dashboard deve essere moderna, 
+responsive, in italiano, con icone specifiche, statistiche min/max leggibili, layout a riquadri, 
+valori min/max calcolati su tutti i record della giornata, visualizzazione del quartiere (neighborhood) e 
+della descrizione del tempo, e colori/icone dinamici in base alle condizioni meteo."
+
+https://api.weather.com/v2/pws/observations/current?stationId=IBARIA12&format=json&units=m&apiKey=8b1e015fdac04f1b9e015fdac09f1b40
+https://api.weather.com/v2/pws/observations/all/1day?stationId=IBARIA12&format=json&units=m&apiKey=8b1e015fdac04f1b9e015fdac09f1b40
+
+START: 
+- frontend: npm start
+- backend: node index.js
