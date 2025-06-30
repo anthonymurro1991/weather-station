@@ -378,8 +378,8 @@ function App() {
         console.error("Errore nel caricamento dei dati:", err);
         let errorMessage = 'Impossibile caricare i dati meteo. ';
         
-        if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
-          errorMessage += 'Il server non è raggiungibile. Assicurati che il server sia in esecuzione su http://localhost:4000.';
+        if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {         
+          errorMessage +=  `Il server non è raggiungibile. Assicurati che il server sia in esecuzione su ${process.env.REACT_APP_API_URL}`;
         } else if (err.response) {
           // Errore di risposta dal server (4xx, 5xx)
           errorMessage += `Errore del server: ${err.response.status} ${err.response.statusText}`;
