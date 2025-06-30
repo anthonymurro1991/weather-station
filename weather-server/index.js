@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 4000;
 // Configurazione CORS più specifica per la produzione
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://meteo-murro.vercel.app', 'https://meteo-murro.netlify.app'] 
+    ? ['https://weather-frontend-9bsl.vercel.app'] 
     : '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
