@@ -16,7 +16,7 @@ import {
 } from 'react-icons/wi';
 
 // Componente per una singola metrica
-const WeatherMetric = ({ icon, label, value, unit, min, max }) => {
+const WeatherMetric = ({ icon, label, value, unit, min, max, minLabel = 'Min', maxLabel = 'Max' }) => {
   // Gestione più robusta dei valori nulli/undefined
   // Invece di non renderizzare, mostrerà "N/D" per i valori mancanti
   const isValidValue = (v) => v !== null && v !== undefined && !isNaN(v) && isFinite(v);
@@ -41,8 +41,8 @@ const WeatherMetric = ({ icon, label, value, unit, min, max }) => {
       </div>
       <div className="metric-value">{displayValue}{isValidValue(value) ? unit : ""}</div>
       <div className="metric-stats">
-        <div>Min: {displayMin}{isValidValue(min) || (isValidValue(value) && !isValidValue(min)) ? unit : ""}</div>
-        <div>Max: {displayMax}{isValidValue(max) || (isValidValue(value) && !isValidValue(max)) ? unit : ""}</div>
+        <div>{minLabel}: {displayMin}{isValidValue(min) || (isValidValue(value) && !isValidValue(min)) ? unit : ""}</div>
+        <div>{maxLabel}: {displayMax}{isValidValue(max) || (isValidValue(value) && !isValidValue(max)) ? unit : ""}</div>
       </div>
     </div>
   );
@@ -606,8 +606,10 @@ function App() {
             label="Pioggia Oggi" 
             value={metric.precipTotal} 
             unit=" mm" 
-            min={null} // La pioggia non ha un min/max giornaliero in questo contesto
-            max={stats?.precipTotalMax} 
+            min={metric.precipRate}
+            max={stats?.precipTotal} 
+            minLabel="Rate"
+            maxLabel="Total"
           />
            <WeatherMetric 
             icon={<WiThermometer />} 
