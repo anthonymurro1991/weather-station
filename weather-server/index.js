@@ -62,84 +62,275 @@ app.get('/api/weather/all', async (req, res) => {
     let stats = {
       tempMin: currentMetric.temp,
       tempMax: currentMetric.temp,
+      tempMinTime: currentObs?.obsTimeLocal,
+      tempMaxTime: currentObs?.obsTimeLocal,
       humidityMin: currentHumidity,
       humidityMax: currentHumidity,
+      humidityMinTime: currentObs?.obsTimeLocal,
+      humidityMaxTime: currentObs?.obsTimeLocal,
       pressureMin: currentMetric.pressure,
       pressureMax: currentMetric.pressure,
+      pressureMinTime: currentObs?.obsTimeLocal,
+      pressureMaxTime: currentObs?.obsTimeLocal,
       windspeedMin: currentMetric.windSpeed,
       windspeedMax: currentMetric.windSpeed,
+      windspeedMinTime: currentObs?.obsTimeLocal,
+      windspeedMaxTime: currentObs?.obsTimeLocal,
       precipTotalMax: currentMetric.precipTotal,
+      precipTotalMaxTime: currentObs?.obsTimeLocal,
       dewptMin: currentMetric.dewpt,
       dewptMax: currentMetric.dewpt,
+      dewptMinTime: currentObs?.obsTimeLocal,
+      dewptMaxTime: currentObs?.obsTimeLocal,
       heatindexMin: currentMetric.heatIndex,      
       heatindexMax: currentMetric.heatIndex,
+      heatindexMinTime: currentObs?.obsTimeLocal,
+      heatindexMaxTime: currentObs?.obsTimeLocal,
       windchillMin: currentMetric.windChill,
       windchillMax: currentMetric.windChill,
+      windchillMinTime: currentObs?.obsTimeLocal,
+      windchillMaxTime: currentObs?.obsTimeLocal,
       windgustMin: currentMetric.windGust,
       windgustMax: currentMetric.windGust,
+      windgustMinTime: currentObs?.obsTimeLocal,
+      windgustMaxTime: currentObs?.obsTimeLocal,
     };
     
     if (observations.length > 0) {
-      // Estrai le metriche da tutte le osservazioni
-      const tempLows = observations.flatMap(o => o.metric.tempLow);
-      const tempHighs = observations.flatMap(o => o.metric.tempHigh);        
-      const pressureLows = observations.flatMap(o => o.metric.pressureMin);      
-      const pressureHighs = observations.flatMap(o => o.metric.pressureMax);
-      const windspeedLows = observations.flatMap(o => o.metric.windspeedLow);      
-      const windspeedHighs = observations.flatMap(o => o.metric.windspeedHigh); 
-      const windgustLows = observations.flatMap(o => o.metric.windgustLow);      
-      const windgustHighs = observations.flatMap(o => o.metric.windgustHigh);       
-      const dewptLows = observations.flatMap(o => o.metric.dewptLow);      
-      const dewptHighs = observations.flatMap(o => o.metric.dewptHigh);
-      const heatIndexLows = observations.flatMap(o => o.metric.heatIndexLow);      
-      const heatIndexHighs = observations.flatMap(o => o.metric.heatIndexHigh);
-      const windChillLows = observations.flatMap(o => o.metric.windchillLow);      
-      const windChillHighs = observations.flatMap(o => o.metric.windchillHigh);
-      const humidityLows = observations.flatMap(o => o.humidityLow);      
-      const humidityHighs = observations.flatMap(o => o.humidityHigh);      
-      const precipTotal = observations.flatMap(o => o.metric.precipTotal);
-      const precipRate = observations.flatMap(o => o.metric.precipRate);
+      // Funzione helper per trovare min/max con timestamp
+      const findMinMaxWithTime = (observations, getValue, obsTimeKey = 'obsTimeLocal') => {
+        const validObs = observations.filter(obs => {
+          const value = getValue(obs);
+          return value !== null && value !== undefined && !isNaN(value);
+        });
+        
+        if (validObs.length === 0) return { min: null, max: null, minTime: null, maxTime: null };
+        
+        let minObs = validObs[0];
+        let maxObs = validObs[0];
+        let minValue = getValue(minObs);
+        let maxValue = getValue(maxObs);
+        
+        for (const obs of validObs) {
+          const value = getValue(obs);
+          if (value < minValue) {
+            minValue = value;
+            minObs = obs;
+          }
+          if (value > maxValue) {
+            maxValue = value;
+            maxObs = obs;
+          }
+        }
+        
+        return {
+          min: minValue,
+          max: maxValue,
+          minTime: minObs[obsTimeKey],
+          maxTime: maxObs[obsTimeKey]
+        };
+      };
 
-      // Calcola min/max per ogni metrica
-      if (tempLows.length > 0) stats.tempMin = Math.min(...tempLows);      
-      if (tempHighs.length > 0) stats.tempMax = Math.max(...tempHighs);
+      // Estrai le osservazioni che hanno i dati necessari
+      const allObservations = observations.flatMap(o => {
+        const result = [];
+        
+        // Per ogni tipo di dato, crea un'osservazione separata se il valore esiste
+        if (o.metric.tempLow !== undefined && o.metric.tempLow !== null) {
+          result.push({ value: o.metric.tempLow, obsTimeLocal: o.obsTimeLocal, type: 'tempLow' });
+        }
+        if (o.metric.tempHigh !== undefined && o.metric.tempHigh !== null) {
+          result.push({ value: o.metric.tempHigh, obsTimeLocal: o.obsTimeLocal, type: 'tempHigh' });
+        }
+        if (o.metric.pressureMin !== undefined && o.metric.pressureMin !== null) {
+          result.push({ value: o.metric.pressureMin, obsTimeLocal: o.obsTimeLocal, type: 'pressureMin' });
+        }
+        if (o.metric.pressureMax !== undefined && o.metric.pressureMax !== null) {
+          result.push({ value: o.metric.pressureMax, obsTimeLocal: o.obsTimeLocal, type: 'pressureMax' });
+        }
+        if (o.metric.windspeedLow !== undefined && o.metric.windspeedLow !== null) {
+          result.push({ value: o.metric.windspeedLow, obsTimeLocal: o.obsTimeLocal, type: 'windspeedLow' });
+        }
+        if (o.metric.windspeedHigh !== undefined && o.metric.windspeedHigh !== null) {
+          result.push({ value: o.metric.windspeedHigh, obsTimeLocal: o.obsTimeLocal, type: 'windspeedHigh' });
+        }
+        if (o.metric.windgustLow !== undefined && o.metric.windgustLow !== null) {
+          result.push({ value: o.metric.windgustLow, obsTimeLocal: o.obsTimeLocal, type: 'windgustLow' });
+        }
+        if (o.metric.windgustHigh !== undefined && o.metric.windgustHigh !== null) {
+          result.push({ value: o.metric.windgustHigh, obsTimeLocal: o.obsTimeLocal, type: 'windgustHigh' });
+        }
+        if (o.metric.dewptLow !== undefined && o.metric.dewptLow !== null) {
+          result.push({ value: o.metric.dewptLow, obsTimeLocal: o.obsTimeLocal, type: 'dewptLow' });
+        }
+        if (o.metric.dewptHigh !== undefined && o.metric.dewptHigh !== null) {
+          result.push({ value: o.metric.dewptHigh, obsTimeLocal: o.obsTimeLocal, type: 'dewptHigh' });
+        }
+        if (o.metric.heatIndexLow !== undefined && o.metric.heatIndexLow !== null) {
+          result.push({ value: o.metric.heatIndexLow, obsTimeLocal: o.obsTimeLocal, type: 'heatIndexLow' });
+        }
+        if (o.metric.heatIndexHigh !== undefined && o.metric.heatIndexHigh !== null) {
+          result.push({ value: o.metric.heatIndexHigh, obsTimeLocal: o.obsTimeLocal, type: 'heatIndexHigh' });
+        }
+        if (o.metric.windchillLow !== undefined && o.metric.windchillLow !== null) {
+          result.push({ value: o.metric.windchillLow, obsTimeLocal: o.obsTimeLocal, type: 'windchillLow' });
+        }
+        if (o.metric.windchillHigh !== undefined && o.metric.windchillHigh !== null) {
+          result.push({ value: o.metric.windchillHigh, obsTimeLocal: o.obsTimeLocal, type: 'windchillHigh' });
+        }
+        if (o.humidityLow !== undefined && o.humidityLow !== null) {
+          result.push({ value: o.humidityLow, obsTimeLocal: o.obsTimeLocal, type: 'humidityLow' });
+        }
+        if (o.humidityHigh !== undefined && o.humidityHigh !== null) {
+          result.push({ value: o.humidityHigh, obsTimeLocal: o.obsTimeLocal, type: 'humidityHigh' });
+        }
+        if (o.metric.precipTotal !== undefined && o.metric.precipTotal !== null) {
+          result.push({ value: o.metric.precipTotal, obsTimeLocal: o.obsTimeLocal, type: 'precipTotal' });
+        }
+        
+        return result;
+      });
+
+      // Calcola min/max per ogni metrica con timestamp
+      const tempLowObs = allObservations.filter(obs => obs.type === 'tempLow');
+      const tempHighObs = allObservations.filter(obs => obs.type === 'tempHigh');
+      const tempMinResult = findMinMaxWithTime(tempLowObs, obs => obs.value);
+      const tempMaxResult = findMinMaxWithTime(tempHighObs, obs => obs.value);
       
-      if (pressureLows.length > 0) stats.pressureMin = Math.min(...pressureLows);
-      if (pressureHighs.length > 0) stats.pressureMax = Math.max(...pressureHighs);
+      if (tempMinResult.min !== null) {
+        stats.tempMin = tempMinResult.min;
+        stats.tempMinTime = tempMinResult.minTime;
+      }
+      if (tempMaxResult.max !== null) {
+        stats.tempMax = tempMaxResult.max;
+        stats.tempMaxTime = tempMaxResult.maxTime;
+      }
+
+      // Pressione
+      const pressureLowObs = allObservations.filter(obs => obs.type === 'pressureMin');
+      const pressureHighObs = allObservations.filter(obs => obs.type === 'pressureMax');
+      const pressureMinResult = findMinMaxWithTime(pressureLowObs, obs => obs.value);
+      const pressureMaxResult = findMinMaxWithTime(pressureHighObs, obs => obs.value);
       
-      if (windspeedLows.length > 0) stats.windspeedMin = Math.min(...windspeedLows);
-      if (windspeedHighs.length > 0) stats.windspeedMax = Math.max(...windspeedHighs);
+      if (pressureMinResult.min !== null) {
+        stats.pressureMin = pressureMinResult.min;
+        stats.pressureMinTime = pressureMinResult.minTime;
+      }
+      if (pressureMaxResult.max !== null) {
+        stats.pressureMax = pressureMaxResult.max;
+        stats.pressureMaxTime = pressureMaxResult.maxTime;
+      }
+
+      // Velocità del vento
+      const windspeedLowObs = allObservations.filter(obs => obs.type === 'windspeedLow');
+      const windspeedHighObs = allObservations.filter(obs => obs.type === 'windspeedHigh');
+      const windspeedMinResult = findMinMaxWithTime(windspeedLowObs, obs => obs.value);
+      const windspeedMaxResult = findMinMaxWithTime(windspeedHighObs, obs => obs.value);
       
-      if (windgustLows.length > 0) stats.windgustMin = Math.min(...windgustLows);
-      if (windgustHighs.length > 0) stats.windgustMax = Math.max(...windgustHighs);
+      if (windspeedMinResult.min !== null) {
+        stats.windspeedMin = windspeedMinResult.min;
+        stats.windspeedMinTime = windspeedMinResult.minTime;
+      }
+      if (windspeedMaxResult.max !== null) {
+        stats.windspeedMax = windspeedMaxResult.max;
+        stats.windspeedMaxTime = windspeedMaxResult.maxTime;
+      }
+
+      // Raffica di vento
+      const windgustLowObs = allObservations.filter(obs => obs.type === 'windgustLow');
+      const windgustHighObs = allObservations.filter(obs => obs.type === 'windgustHigh');
+      const windgustMinResult = findMinMaxWithTime(windgustLowObs, obs => obs.value);
+      const windgustMaxResult = findMinMaxWithTime(windgustHighObs, obs => obs.value);
       
-      if (dewptLows.length > 0) stats.dewptMin = Math.min(...dewptLows);
-      if (dewptHighs.length > 0) stats.dewptMax = Math.max(...dewptHighs);
+      if (windgustMinResult.min !== null) {
+        stats.windgustMin = windgustMinResult.min;
+        stats.windgustMinTime = windgustMinResult.minTime;
+      }
+      if (windgustMaxResult.max !== null) {
+        stats.windgustMax = windgustMaxResult.max;
+        stats.windgustMaxTime = windgustMaxResult.maxTime;
+      }
+
+      // Punto di rugiada
+      const dewptLowObs = allObservations.filter(obs => obs.type === 'dewptLow');
+      const dewptHighObs = allObservations.filter(obs => obs.type === 'dewptHigh');
+      const dewptMinResult = findMinMaxWithTime(dewptLowObs, obs => obs.value);
+      const dewptMaxResult = findMinMaxWithTime(dewptHighObs, obs => obs.value);
       
-      if (heatIndexLows.length > 0) stats.heatindexMin = Math.min(...heatIndexLows);
-      if (heatIndexHighs.length > 0) stats.heatindexMax = Math.max(...heatIndexHighs);
+      if (dewptMinResult.min !== null) {
+        stats.dewptMin = dewptMinResult.min;
+        stats.dewptMinTime = dewptMinResult.minTime;
+      }
+      if (dewptMaxResult.max !== null) {
+        stats.dewptMax = dewptMaxResult.max;
+        stats.dewptMaxTime = dewptMaxResult.maxTime;
+      }
+
+      // Indice di calore
+      const heatIndexLowObs = allObservations.filter(obs => obs.type === 'heatIndexLow');
+      const heatIndexHighObs = allObservations.filter(obs => obs.type === 'heatIndexHigh');
+      const heatIndexMinResult = findMinMaxWithTime(heatIndexLowObs, obs => obs.value);
+      const heatIndexMaxResult = findMinMaxWithTime(heatIndexHighObs, obs => obs.value);
       
-      if (windChillLows.length > 0) stats.windchillMin = Math.min(...windChillLows);
-      if (windChillHighs.length > 0) stats.windchillMax = Math.max(...windChillHighs);
+      if (heatIndexMinResult.min !== null) {
+        stats.heatindexMin = heatIndexMinResult.min;
+        stats.heatindexMinTime = heatIndexMinResult.minTime;
+      }
+      if (heatIndexMaxResult.max !== null) {
+        stats.heatindexMax = heatIndexMaxResult.max;
+        stats.heatindexMaxTime = heatIndexMaxResult.maxTime;
+      }
+
+      // Wind chill
+      const windchillLowObs = allObservations.filter(obs => obs.type === 'windchillLow');
+      const windchillHighObs = allObservations.filter(obs => obs.type === 'windchillHigh');
+      const windchillMinResult = findMinMaxWithTime(windchillLowObs, obs => obs.value);
+      const windchillMaxResult = findMinMaxWithTime(windchillHighObs, obs => obs.value);
       
-      if (humidityLows.length > 0) stats.humidityMin = Math.min(...humidityLows);
-      if (humidityHighs.length > 0) stats.humidityMax = Math.max(...humidityHighs);
+      if (windchillMinResult.min !== null) {
+        stats.windchillMin = windchillMinResult.min;
+        stats.windchillMinTime = windchillMinResult.minTime;
+      }
+      if (windchillMaxResult.max !== null) {
+        stats.windchillMax = windchillMaxResult.max;
+        stats.windchillMaxTime = windchillMaxResult.maxTime;
+      }
+
+      // Umidità
+      const humidityLowObs = allObservations.filter(obs => obs.type === 'humidityLow');
+      const humidityHighObs = allObservations.filter(obs => obs.type === 'humidityHigh');
+      const humidityMinResult = findMinMaxWithTime(humidityLowObs, obs => obs.value);
+      const humidityMaxResult = findMinMaxWithTime(humidityHighObs, obs => obs.value);
       
-      if (precipTotal.length > 0) stats.precipTotal = Math.max(...precipTotal);
-      if (precipRate.length > 0) stats.precipRate = Math.max(...precipRate);
+      if (humidityMinResult.min !== null) {
+        stats.humidityMin = humidityMinResult.min;
+        stats.humidityMinTime = humidityMinResult.minTime;
+      }
+      if (humidityMaxResult.max !== null) {
+        stats.humidityMax = humidityMaxResult.max;
+        stats.humidityMaxTime = humidityMaxResult.maxTime;
+      }
+
+      // Precipitazioni totali (solo max)
+      const precipTotalObs = allObservations.filter(obs => obs.type === 'precipTotal');
+      const precipTotalResult = findMinMaxWithTime(precipTotalObs, obs => obs.value);
+      
+      if (precipTotalResult.max !== null) {
+        stats.precipTotalMax = precipTotalResult.max;
+        stats.precipTotalMaxTime = precipTotalResult.maxTime;
+      }
       
       // Vediamo i risultati calcolati
-      console.log('\n Statistiche min/max:');
-      console.log(`- Temperatura: min=${stats.tempMin}, max=${stats.tempMax}`);
-      console.log(`- Umidità: min=${stats.humidityMin}, max=${stats.humidityMax}`);
-      console.log(`- Pressione: min=${stats.pressureMin}, max=${stats.pressureMax}`);
-      console.log(`- Velocità vento: min=${stats.windspeedMin}, max=${stats.windspeedMax}`);
-      console.log(`- Raffica di vento: min=${stats.windgustMin}, max=${stats.windgustMax}`);
-      console.log(`- Punto di rugiada: min=${stats.dewptMin}, max=${stats.dewptMax}`);
-      console.log(`- Indice di calore: min=${stats.heatindexMin}, max=${stats.heatindexMax}`);
-      console.log(`- Chill del vento: min=${stats.windchillMin}, max=${stats.windchillMax}`);
-      console.log(`- Precipitazioni totali: ${stats.precipTotal}`);
-      console.log(`- Tasso di precipitazione: ${stats.precipRate}`);
+      console.log('\n Statistiche min/max con timestamp:');
+      console.log(`- Temperatura: min=${stats.tempMin} (${stats.tempMinTime}), max=${stats.tempMax} (${stats.tempMaxTime})`);
+      console.log(`- Umidità: min=${stats.humidityMin} (${stats.humidityMinTime}), max=${stats.humidityMax} (${stats.humidityMaxTime})`);
+      console.log(`- Pressione: min=${stats.pressureMin} (${stats.pressureMinTime}), max=${stats.pressureMax} (${stats.pressureMaxTime})`);
+      console.log(`- Velocità vento: min=${stats.windspeedMin} (${stats.windspeedMinTime}), max=${stats.windspeedMax} (${stats.windspeedMaxTime})`);
+      console.log(`- Raffica di vento: min=${stats.windgustMin} (${stats.windgustMinTime}), max=${stats.windgustMax} (${stats.windgustMaxTime})`);
+      console.log(`- Punto di rugiada: min=${stats.dewptMin} (${stats.dewptMinTime}), max=${stats.dewptMax} (${stats.dewptMaxTime})`);
+      console.log(`- Indice di calore: min=${stats.heatindexMin} (${stats.heatindexMinTime}), max=${stats.heatindexMax} (${stats.heatindexMaxTime})`);
+      console.log(`- Chill del vento: min=${stats.windchillMin} (${stats.windchillMinTime}), max=${stats.windchillMax} (${stats.windchillMaxTime})`);
+      console.log(`- Precipitazioni totali: ${stats.precipTotalMax} (${stats.precipTotalMaxTime})`);
     }
     
     // Verifica quanti valori null rimangono
