@@ -384,19 +384,19 @@ body {
 }
 
 .trend-arrow--rising-fast {
-  color: #27ae60;
+  color: white;
 }
 .trend-arrow--rising {
-  color: #2ecc71;
+  color: white;
 }
 .trend-arrow--stable {
   color: white;
 }
 .trend-arrow--falling {
-  color: #e67e22;
+  color: white;
 }
 .trend-arrow--falling-fast {
-  color: #e74c3c;
+  color: white;
 }
 
 .weather-precipitation {
