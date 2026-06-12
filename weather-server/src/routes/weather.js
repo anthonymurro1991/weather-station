@@ -30,8 +30,6 @@ router.get("/all", async (req, res) => {
     ]);
 
     const observations = statsData.observations || [];
-    console.log(`\nOsservazioni giornaliere ricevute: ${observations.length}`);
-
     const currentObs = currentData.observations?.[0] ?? null;
 
     // Calcola min/max giornalieri dalle osservazioni storiche
@@ -65,10 +63,12 @@ router.get("/all", async (req, res) => {
     const faviconName = getFaviconName(category, metric.temp);
 
     // Comprimi le osservazioni di pressione per la sparkline (time + valore)
-    const pressureHistory = observations.map((o) => ({
-      t: o.obsTimeLocal,
-      p: o.metric?.pressureMax ?? o.metric?.pressureMin ?? null,
-    })).filter((o) => o.p != null);
+    const pressureHistory = observations
+      .map((o) => ({
+        t: o.obsTimeLocal,
+        p: o.metric?.pressureMax ?? o.metric?.pressureMin ?? null,
+      }))
+      .filter((o) => o.p != null);
 
     res.json({
       current: currentData,
@@ -83,7 +83,6 @@ router.get("/all", async (req, res) => {
       faviconName,
     });
   } catch (err) {
-    console.error("Errore nel fetch dei dati meteo:", err.message);
     res.status(500).json({
       error: "Failed to fetch unified weather data",
       details: err.message,
