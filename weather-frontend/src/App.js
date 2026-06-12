@@ -13,7 +13,6 @@ import {
   WiSnowflakeCold,
   WiUmbrella,
   WiNightClear,
-  WiWindDeg,
 } from "react-icons/wi";
 import {
   AreaChart,
