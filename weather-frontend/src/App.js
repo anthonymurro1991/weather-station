@@ -474,7 +474,15 @@ function App() {
           <div className="card-header">
             <h2>Stazione Meteo Murro</h2>
             <div className="last-updated">
-              Ultimo aggiornamento: {lastUpdatedTime}
+              <div>Ultimo aggiornamento: {lastUpdatedTime}</div>
+              <div className="current-clock">
+                Ora:{" "}
+                {currentTime.toLocaleTimeString("it-IT", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </div>
             </div>
           </div>
 
@@ -525,17 +533,6 @@ function App() {
               {current.conditions && (
                 <div className="weather-condition">{current.conditions}</div>
               )}
-              <div className="weather-time">
-                <span className="time-value">
-                  {currentTime.toLocaleTimeString("it-IT", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                  <span className="seconds">
-                    {currentTime.getSeconds().toString().padStart(2, "0")}
-                  </span>
-                </span>
-              </div>
             </div>
           </div>
 
