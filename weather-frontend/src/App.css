@@ -318,12 +318,23 @@ body {
   margin-right: auto;
   animation: fadeInUp 0.8s ease;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0;
   position: relative;
   overflow: hidden;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   letter-spacing: 0.3px;
+}
+
+.description-text {
+  width: 100%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.6),
+    0 0 8px rgba(0, 0, 0, 0.4);
 }
 
 .weather-description::before {
@@ -342,17 +353,46 @@ body {
 }
 
 .weather-trend {
+  width: 100%;
   text-align: center;
-  margin: -0.4rem 0 1rem;
-  padding: 0.5rem 1.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 0.88rem;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.6),
+    0 0 8px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.3px;
-  max-width: 90%;
-  margin-left: auto;
-  margin-right: auto;
   font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.trend-arrow {
+  font-style: normal;
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.trend-arrow--rising-fast {
+  color: #2ecc71;
+}
+.trend-arrow--rising {
+  color: #a8e6cf;
+}
+.trend-arrow--stable {
+  color: rgba(255, 255, 255, 0.7);
+}
+.trend-arrow--falling {
+  color: #f39c12;
+}
+.trend-arrow--falling-fast {
+  color: #e74c3c;
 }
 
 .weather-precipitation {

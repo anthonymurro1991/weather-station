@@ -50,14 +50,10 @@ const WeatherMetric = ({
       : "N/D";
 
   // Funzione per formattare il timestamp
-  // obsTimeLocal arriva come "2026-06-12 00:04:48" (spazio, non T) — va normalizzato
   const formatTime = (timeString) => {
     if (!timeString) return "";
     try {
-      const normalized = String(timeString).replace(" ", "T");
-      const d = new Date(normalized);
-      if (isNaN(d.getTime())) return "";
-      return d.toLocaleTimeString("it-IT", {
+      return new Date(timeString).toLocaleTimeString("it-IT", {
         hour: "2-digit",
         minute: "2-digit",
       });
@@ -502,7 +498,7 @@ function App() {
                     °C
                     {stats.tempMinTime && (
                       <span className="time-stamp">
-                        {new Date(String(stats.tempMinTime).replace(" ", "T")).toLocaleTimeString(
+                        {new Date(stats.tempMinTime).toLocaleTimeString(
                           "it-IT",
                           { hour: "2-digit", minute: "2-digit" },
                         )}
@@ -517,7 +513,7 @@ function App() {
                     °C
                     {stats.tempMaxTime && (
                       <span className="time-stamp">
-                        {new Date(String(stats.tempMaxTime).replace(" ", "T")).toLocaleTimeString(
+                        {new Date(stats.tempMaxTime).toLocaleTimeString(
                           "it-IT",
                           { hour: "2-digit", minute: "2-digit" },
                         )}
@@ -543,13 +539,26 @@ function App() {
             </div>
           </div>
 
-          {/* Mostra la descrizione personalizzata del meteo */}
-          <div className="weather-description">{weatherDescriptionText}</div>
-
-          {/* Trend previsionale (pressione/umidità nelle ultime 24h) */}
-          {weatherData?.trend && (
-            <div className="weather-trend">{weatherData.trend}</div>
-          )}
+          {/* Descrizione + trend previsionale nello stesso box */}
+          <div className="weather-description">
+            <div className="description-text">{weatherDescriptionText}</div>
+            {weatherData?.trend && (
+              <div className="weather-trend">
+                <span
+                  className={`trend-arrow trend-arrow--${weatherData.pressureTrend || "stable"}`}
+                >
+                  {{
+                    "rising-fast": "⬆⬆",
+                    rising: "⬆",
+                    stable: "➡",
+                    falling: "⬇",
+                    "falling-fast": "⬇⬇",
+                  }[weatherData.pressureTrend] || "➡"}
+                </span>
+                {weatherData.trend}
+              </div>
+            )}
+          </div>
 
           {current?.imperial?.precipTotal > 0 && (
             <div className="weather-precipitation">

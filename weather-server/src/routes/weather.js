@@ -36,7 +36,7 @@ router.get("/all", async (req, res) => {
 
     // Calcola min/max giornalieri dalle osservazioni storiche
     const stats = computeStats(currentObs, observations);
-    const { forecastText } = computeTrend(observations);
+    const { forecastText, pressureTrend } = computeTrend(observations);
 
     // Calcola la descrizione testuale (logica principale — dati grezzi)
     const metric = currentObs?.metric || {};
@@ -62,6 +62,7 @@ router.get("/all", async (req, res) => {
       stats,
       description,
       trend: forecastText,
+      pressureTrend,
       iconName,
       backgroundClass,
       faviconName,
