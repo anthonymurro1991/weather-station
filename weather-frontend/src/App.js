@@ -84,7 +84,9 @@ const WeatherMetric = ({
             {isValidValue(min) || (isValidValue(value) && !isValidValue(min))
               ? unit
               : ""}
-            {minTime && <span className="time-stamp">{formatTime(minTime)}</span>}
+            {minTime && (
+              <span className="time-stamp">{formatTime(minTime)}</span>
+            )}
           </div>
         )}
         <div>
@@ -428,6 +430,7 @@ function App() {
   const current = weatherData?.current?.observations?.[0];
   const stats = weatherData?.stats;
   const metric = current?.metric;
+  const isWarmSeason = new Date().getMonth() >= 3 && new Date().getMonth() <= 8;
 
   if (!current || !metric) {
     return (
@@ -628,6 +631,16 @@ function App() {
             maxLabel="Total"
             decimals={1}
           />
+          {weatherData?.rainProbability != null && (
+            <div className="weather-metric">
+              <div className="metric-header">
+                <WiRain size={40} />
+                <span>Prob. Pioggia</span>
+              </div>
+              <div className="metric-value">{weatherData.rainProbability}%</div>
+              <div className="metric-stats"></div>
+            </div>
+          )}
           <WeatherMetric
             icon={<WiThermometer />}
             label="Punto di Rugiada"
@@ -640,25 +653,18 @@ function App() {
             decimals={1}
           />
           <WeatherMetric
-            icon={<WiHot />}
-            label="Indice di Calore"
-            value={metric.heatIndex}
+            icon={isWarmSeason ? <WiHot /> : <WiSnowflakeCold />}
+            label="Temp. Percepita"
+            value={isWarmSeason ? metric.heatIndex : metric.windChill}
             unit="°C"
-            min={stats?.heatindexMin}
-            max={stats?.heatindexMax}
-            minTime={stats?.heatindexMinTime}
-            maxTime={stats?.heatindexMaxTime}
-            decimals={1}
-          />
-          <WeatherMetric
-            icon={<WiSnowflakeCold />}
-            label="Temperatura Percepita"
-            value={metric.windChill}
-            unit="°C"
-            min={stats?.windchillMin}
-            max={stats?.windchillMax}
-            minTime={stats?.windchillMinTime}
-            maxTime={stats?.windchillMaxTime}
+            min={isWarmSeason ? stats?.heatindexMin : stats?.windchillMin}
+            max={isWarmSeason ? stats?.heatindexMax : stats?.windchillMax}
+            minTime={
+              isWarmSeason ? stats?.heatindexMinTime : stats?.windchillMinTime
+            }
+            maxTime={
+              isWarmSeason ? stats?.heatindexMaxTime : stats?.windchillMaxTime
+            }
             decimals={1}
           />
         </div>

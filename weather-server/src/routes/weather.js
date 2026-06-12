@@ -10,7 +10,7 @@
 import { Router } from "express";
 import { fetchCurrentWeather, fetchDailyStats } from "../weatherApi.js";
 import { computeStats } from "../statsCalculator.js";
-import { computeTrend } from "../trendCalculator.js";
+import { computeTrend, computeRainProbability } from "../trendCalculator.js";
 import { classifyFromDescription } from "../conditionClassifier.js";
 import { getWeatherDescription } from "../descriptionCalculator.js";
 import {
@@ -36,7 +36,14 @@ router.get("/all", async (req, res) => {
 
     // Calcola min/max giornalieri dalle osservazioni storiche
     const stats = computeStats(currentObs, observations);
-    const { forecastText, pressureTrend } = computeTrend(observations);
+    const { forecastText, pressureTrend, humidityTrend } =
+      computeTrend(observations);
+    const rainProbability = computeRainProbability(
+      pressureTrend,
+      humidityTrend,
+      observations,
+      currentObs,
+    );
 
     // Calcola la descrizione testuale (logica principale — dati grezzi)
     const metric = currentObs?.metric || {};
@@ -63,6 +70,7 @@ router.get("/all", async (req, res) => {
       description,
       trend: forecastText,
       pressureTrend,
+      rainProbability,
       iconName,
       backgroundClass,
       faviconName,

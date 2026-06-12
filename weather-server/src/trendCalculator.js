@@ -143,3 +143,81 @@ function buildForecastText(pressureTrend, humidityTrend, pressure, humidity) {
 
   return `${pressureLabel} — condizioni stabili`;
 }
+
+/**
+ * Stima la probabilità di pioggia (0–95%) basandosi solo sui dati della stazione.
+ *
+ * Fattori:
+ *  - precipRate > 0        → sta già piovendo (95%)
+ *  - pressureTrend         → falling/falling-fast aumenta probabilità
+ *  - humidityTrend         → rising aumenta probabilità
+ *  - humidity corrente     → soglie 70% e 85%
+ *  - dewpt depression      → (temp - dewpt) < 5°C → aria quasi satura
+ *  - trend pressione 3h    → calo rapido nelle ultime 3h
+ *
+ * @param {string} pressureTrend
+ * @param {string} humidityTrend
+ * @param {Array}  observations
+ * @param {object} currentObs  - osservazione corrente (metric.temp, metric.dewpt, ecc.)
+ * @returns {number} percentuale intera 0–95
+ */
+export function computeRainProbability(
+  pressureTrend,
+  humidityTrend,
+  observations,
+  currentObs,
+) {
+  const metric = currentObs?.metric || {};
+  const humidity = currentObs?.humidity ?? metric.humidity ?? 0;
+  const precipRate = metric.precipRate ?? 0;
+  const temp = metric.temp ?? null;
+  const dewpt = metric.dewpt ?? null;
+
+  // Sta già piovendo
+  if (precipRate > 0) return 95;
+
+  let prob = 15; // base
+
+  // Trend pressione
+  if (pressureTrend === "falling-fast") prob += 35;
+  else if (pressureTrend === "falling") prob += 20;
+  else if (pressureTrend === "rising") prob -= 10;
+  else if (pressureTrend === "rising-fast") prob -= 20;
+
+  // Trend umidità
+  if (humidityTrend === "rising-fast") prob += 15;
+  else if (humidityTrend === "rising") prob += 8;
+  else if (humidityTrend === "falling") prob -= 5;
+
+  // Umidità assoluta corrente
+  if (humidity >= 85) prob += 15;
+  else if (humidity >= 70) prob += 8;
+
+  // Dewpoint depression (temp - dewpt): più è bassa, più l'aria è satura
+  if (temp != null && dewpt != null) {
+    const depression = temp - dewpt;
+    if (depression < 2) prob += 15;
+    else if (depression < 5) prob += 8;
+    else if (depression > 15) prob -= 5;
+  }
+
+  // Calo pressione nelle ultime 3h (slot 30–36 dal fondo ≈ 3h fa)
+  const total = observations.length;
+  const recent3h = observations.slice(Math.max(0, total - 6));
+  const older3h = observations.slice(
+    Math.max(0, total - 36),
+    Math.max(0, total - 30),
+  );
+  const pRecent = avg(
+    recent3h.map((o) => o.metric?.pressureMax ?? o.metric?.pressureMin),
+  );
+  const pOlder = avg(
+    older3h.map((o) => o.metric?.pressureMax ?? o.metric?.pressureMin),
+  );
+  if (pRecent != null && pOlder != null) {
+    const dp3h = pRecent - pOlder;
+    if (dp3h <= -2) prob += 10;
+  }
+
+  return Math.min(95, Math.max(0, Math.round(prob)));
+}
