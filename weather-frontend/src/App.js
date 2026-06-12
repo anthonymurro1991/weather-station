@@ -27,26 +27,31 @@ const WeatherMetric = ({
   maxTime,
   minLabel = "Min",
   maxLabel = "Max",
+  decimals = 0,
+  showMin = true,
 }) => {
   // Gestione più robusta dei valori nulli/undefined
   // Invece di non renderizzare, mostrerà "N/D" per i valori mancanti
   const isValidValue = (v) =>
     v !== null && v !== undefined && !isNaN(v) && isFinite(v);
 
-  const displayValue = isValidValue(value) ? Math.round(value) : "N/D";
+  const fmt = (v) =>
+    isValidValue(v) ? parseFloat(v).toFixed(decimals) : "N/D";
+
+  const displayValue = fmt(value);
 
   // Mostra sempre la sezione statistiche, ma gestisci meglio i valori nulli o NaN
   // Usa il valore corrente come fallback se min o max non sono disponibili
   const displayMin = isValidValue(min)
-    ? Math.round(min)
+    ? fmt(min)
     : isValidValue(value)
-      ? Math.round(value)
+      ? fmt(value)
       : "N/D";
 
   const displayMax = isValidValue(max)
-    ? Math.round(max)
+    ? fmt(max)
     : isValidValue(value)
-      ? Math.round(value)
+      ? fmt(value)
       : "N/D";
 
   // Funzione per formattare il timestamp
@@ -73,13 +78,15 @@ const WeatherMetric = ({
         {isValidValue(value) ? unit : ""}
       </div>
       <div className="metric-stats">
-        <div>
-          {minLabel}: {displayMin}
-          {isValidValue(min) || (isValidValue(value) && !isValidValue(min))
-            ? unit
-            : ""}
-          {minTime && <span className="time-stamp">{formatTime(minTime)}</span>}
-        </div>
+        {showMin && (
+          <div>
+            {minLabel}: {displayMin}
+            {isValidValue(min) || (isValidValue(value) && !isValidValue(min))
+              ? unit
+              : ""}
+            {minTime && <span className="time-stamp">{formatTime(minTime)}</span>}
+          </div>
+        )}
         <div>
           {maxLabel}: {displayMax}
           {isValidValue(max) || (isValidValue(value) && !isValidValue(max))
@@ -495,14 +502,16 @@ function App() {
           <div className="main-info">
             <div className="weather-icon-large">{weatherIcon}</div>
             <div className="temperature-details">
-              <div className="current-temp">{Math.round(metric.temp)}°C</div>
+              <div className="current-temp">
+                {parseFloat(metric.temp).toFixed(1)}°C
+              </div>
               {stats && (
                 <div className="temp-min-max">
                   <span>
                     Min:{" "}
                     {stats.tempMin
-                      ? Math.round(stats.tempMin)
-                      : Math.round(metric.temp)}
+                      ? parseFloat(stats.tempMin).toFixed(1)
+                      : parseFloat(metric.temp).toFixed(1)}
                     °C
                     {stats.tempMinTime && (
                       <span className="time-stamp">
@@ -516,8 +525,8 @@ function App() {
                   <span>
                     Max:{" "}
                     {stats.tempMax
-                      ? Math.round(stats.tempMax)
-                      : Math.round(metric.temp)}
+                      ? parseFloat(stats.tempMax).toFixed(1)
+                      : parseFloat(metric.temp).toFixed(1)}
                     °C
                     {stats.tempMaxTime && (
                       <span className="time-stamp">
@@ -574,6 +583,7 @@ function App() {
             max={stats?.humidityMax}
             minTime={stats?.humidityMinTime}
             maxTime={stats?.humidityMaxTime}
+            decimals={0}
           />
           <WeatherMetric
             icon={<WiBarometer />}
@@ -584,26 +594,27 @@ function App() {
             max={stats?.pressureMax}
             minTime={stats?.pressureMinTime}
             maxTime={stats?.pressureMaxTime}
+            decimals={1}
           />
           <WeatherMetric
             icon={<WiWindy />}
             label="Vento"
             value={metric.windSpeed}
             unit=" km/h"
-            min={stats?.windspeedMin}
             max={stats?.windspeedMax}
-            minTime={stats?.windspeedMinTime}
             maxTime={stats?.windspeedMaxTime}
+            showMin={false}
+            decimals={1}
           />
           <WeatherMetric
             icon={<WiWindy />}
             label="Raffica"
             value={metric.windGust}
             unit=" km/h"
-            min={stats?.windgustMin}
             max={stats?.windgustMax}
-            minTime={stats?.windgustMinTime}
             maxTime={stats?.windgustMaxTime}
+            showMin={false}
+            decimals={1}
           />
           <WeatherMetric
             icon={<WiUmbrella />}
@@ -613,8 +624,9 @@ function App() {
             min={metric.precipRate}
             max={stats?.precipTotalMax}
             maxTime={stats?.precipTotalMaxTime}
-            minLabel="Rate"
+            minLabel="Rate/h"
             maxLabel="Total"
+            decimals={1}
           />
           <WeatherMetric
             icon={<WiThermometer />}
@@ -625,6 +637,7 @@ function App() {
             max={stats?.dewptMax}
             minTime={stats?.dewptMinTime}
             maxTime={stats?.dewptMaxTime}
+            decimals={1}
           />
           <WeatherMetric
             icon={<WiHot />}
@@ -635,6 +648,7 @@ function App() {
             max={stats?.heatindexMax}
             minTime={stats?.heatindexMinTime}
             maxTime={stats?.heatindexMaxTime}
+            decimals={1}
           />
           <WeatherMetric
             icon={<WiSnowflakeCold />}
@@ -645,6 +659,7 @@ function App() {
             max={stats?.windchillMax}
             minTime={stats?.windchillMinTime}
             maxTime={stats?.windchillMaxTime}
+            decimals={1}
           />
         </div>
       </main>
