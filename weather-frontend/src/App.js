@@ -13,6 +13,7 @@ import {
   WiSnowflakeCold,
   WiUmbrella,
   WiNightClear,
+  WiWindDeg,
 } from "react-icons/wi";
 import {
   AreaChart,
@@ -22,6 +23,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { MdShowChart } from "react-icons/md";
 
 // Componente bussola vento
 const WindCompass = ({ degrees }) => {
@@ -173,7 +175,10 @@ const PressureSparkline = ({ data }) => {
 
   return (
     <div className="pressure-sparkline">
-      <div className="sparkline-title">Pressione ultime 24h</div>
+      <div className="metric-header">
+        <MdShowChart size={28} />
+        <span>Pressione ultime 24h</span>
+      </div>
       <ResponsiveContainer width="100%" height={90}>
         <AreaChart
           data={formatted}
@@ -862,6 +867,17 @@ function App() {
             decimals={1}
           />
           <WeatherMetric
+            icon={<WiThermometer />}
+            label="Punto di Rugiada"
+            value={metric.dewpt}
+            unit="°C"
+            min={stats?.dewptMin}
+            max={stats?.dewptMax}
+            minTime={stats?.dewptMinTime}
+            maxTime={stats?.dewptMaxTime}
+            decimals={1}
+          />
+          <WeatherMetric
             icon={<WiUmbrella />}
             label="Pioggia Oggi"
             value={metric.precipTotal}
@@ -883,17 +899,6 @@ function App() {
               <div className="metric-stats"></div>
             </div>
           )}
-          <WeatherMetric
-            icon={<WiThermometer />}
-            label="Punto di Rugiada"
-            value={metric.dewpt}
-            unit="°C"
-            min={stats?.dewptMin}
-            max={stats?.dewptMax}
-            minTime={stats?.dewptMinTime}
-            maxTime={stats?.dewptMaxTime}
-            decimals={1}
-          />
           <WeatherMetric
             icon={isWarmSeason ? <WiHot /> : <WiSnowflakeCold />}
             label="Temp. Percepita"

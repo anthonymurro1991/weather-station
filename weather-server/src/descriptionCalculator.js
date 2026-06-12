@@ -152,9 +152,17 @@ export function getWeatherDescription(
       return isDay ? "Cielo nuvoloso" : "Cielo notturno nuvoloso";
 
     case "clear":
-      if (temp > 30)
+      if (temp > 40)
+        return isDay
+          ? "Cielo sereno, caldo torrido"
+          : "Cielo sereno, notte torrida";
+      if (temp > 35)
         return isDay
           ? "Cielo sereno, caldo intenso"
+          : "Cielo sereno, notte calda";
+      if (temp > 30)
+        return isDay
+          ? "Cielo sereno, caldo moderato"
           : "Cielo sereno, notte calda";
       if (temp > 25)
         return isDay
@@ -185,9 +193,17 @@ export function getWeatherDescription(
         return isDay
           ? "Aria molto umida, cielo variabile"
           : "Aria molto umida, notte variabile";
-      if (temp > 30)
+      if (temp > 40)
+        return isDay
+          ? "Cielo sereno, caldo torrido"
+          : "Cielo sereno, notte torrida";
+      if (temp > 35)
         return isDay
           ? "Cielo sereno, caldo intenso"
+          : "Cielo sereno, notte calda";
+      if (temp > 30)
+        return isDay
+          ? "Cielo sereno, caldo moderato"
           : "Cielo sereno, notte calda";
       if (temp > 25)
         return isDay
