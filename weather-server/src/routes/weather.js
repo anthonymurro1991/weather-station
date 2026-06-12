@@ -64,6 +64,12 @@ router.get("/all", async (req, res) => {
     const backgroundClass = getBackgroundClass(category, metric.temp);
     const faviconName = getFaviconName(category, metric.temp);
 
+    // Comprimi le osservazioni di pressione per la sparkline (time + valore)
+    const pressureHistory = observations.map((o) => ({
+      t: o.obsTimeLocal,
+      p: o.metric?.pressureMax ?? o.metric?.pressureMin ?? null,
+    })).filter((o) => o.p != null);
+
     res.json({
       current: currentData,
       stats,
@@ -71,6 +77,7 @@ router.get("/all", async (req, res) => {
       trend: forecastText,
       pressureTrend,
       rainProbability,
+      pressureHistory,
       iconName,
       backgroundClass,
       faviconName,

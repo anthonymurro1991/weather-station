@@ -14,6 +14,223 @@ import {
   WiUmbrella,
   WiNightClear,
 } from "react-icons/wi";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+// Componente bussola vento
+const WindCompass = ({ degrees }) => {
+  if (degrees == null) return null;
+  const dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+  const label = dirs[Math.round(degrees / 45) % 8];
+
+  const size = 130;
+  const cx = size / 2,
+    cy = size / 2,
+    r = 48;
+  const toRad = (deg) => (deg - 90) * (Math.PI / 180);
+  const tipLen = 38,
+    tailLen = 20,
+    halfW = 7;
+
+  const tipX = cx + tipLen * Math.cos(toRad(degrees));
+  const tipY = cy + tipLen * Math.sin(toRad(degrees));
+  const tailX = cx - tailLen * Math.cos(toRad(degrees));
+  const tailY = cy - tailLen * Math.sin(toRad(degrees));
+  const perpRad = toRad(degrees) + Math.PI / 2;
+
+  // triangolo punta (bianco pieno)
+  const blx = cx + halfW * Math.cos(perpRad);
+  const bly = cy + halfW * Math.sin(perpRad);
+  const brx = cx - halfW * Math.cos(perpRad);
+  const bry = cy - halfW * Math.sin(perpRad);
+
+  // triangolo coda (semi-trasparente)
+  const btlx = tailX + halfW * 0.6 * Math.cos(perpRad);
+  const btly = tailY + halfW * 0.6 * Math.sin(perpRad);
+  const btrx = tailX - halfW * 0.6 * Math.cos(perpRad);
+  const btry = tailY - halfW * 0.6 * Math.sin(perpRad);
+
+  return (
+    <div className="wind-compass">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="rgba(255,255,255,0.08)"
+          stroke="rgba(255,255,255,0.35)"
+          strokeWidth="1.5"
+        />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
+          const ar = ((a - 90) * Math.PI) / 180;
+          return (
+            <line
+              key={a}
+              x1={cx + (r - 6) * Math.cos(ar)}
+              y1={cy + (r - 6) * Math.sin(ar)}
+              x2={cx + r * Math.cos(ar)}
+              y2={cy + r * Math.sin(ar)}
+              stroke="rgba(255,255,255,0.45)"
+              strokeWidth="1"
+            />
+          );
+        })}
+        <text
+          x={cx}
+          y={cy - r + 13}
+          textAnchor="middle"
+          fill="white"
+          fontSize="13"
+          fontWeight="700"
+        >
+          N
+        </text>
+        <text
+          x={cx}
+          y={cy + r - 4}
+          textAnchor="middle"
+          fill="rgba(255,255,255,0.85)"
+          fontSize="11"
+          fontWeight="600"
+        >
+          S
+        </text>
+        <text
+          x={cx + r - 5}
+          y={cy + 4}
+          textAnchor="middle"
+          fill="rgba(255,255,255,0.85)"
+          fontSize="11"
+          fontWeight="600"
+        >
+          E
+        </text>
+        <text
+          x={cx - r + 5}
+          y={cy + 4}
+          textAnchor="middle"
+          fill="rgba(255,255,255,0.85)"
+          fontSize="11"
+          fontWeight="600"
+        >
+          O
+        </text>
+        {/* triangolo punta — bianco */}
+        <polygon
+          points={`${tipX},${tipY} ${blx},${bly} ${brx},${bry}`}
+          fill="white"
+        />
+        {/* corpo ago */}
+        <line
+          x1={cx}
+          y1={cy}
+          x2={tailX}
+          y2={tailY}
+          stroke="rgba(255,255,255,0.4)"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        {/* triangolo coda — semi-trasparente */}
+        <polygon
+          points={`${tailX},${tailY} ${btlx},${btly} ${btrx},${btry}`}
+          fill="rgba(255,255,255,0.35)"
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r="4"
+          fill="white"
+          stroke="rgba(0,0,0,0.2)"
+          strokeWidth="1"
+        />
+      </svg>
+      <div className="wind-compass-label">
+        {label} {Math.round(degrees)}°
+      </div>
+    </div>
+  );
+};
+
+// Componente sparkline pressione
+const PressureSparkline = ({ data }) => {
+  if (!data || data.length === 0) return null;
+  const formatted = data.map((d) => ({
+    t: d.t?.substring(11, 16) ?? "",
+    p: d.p,
+  }));
+  const values = formatted.map((d) => d.p);
+  const minP = Math.min(...values);
+  const maxP = Math.max(...values);
+  const domain = [Math.floor(minP - 0.5), Math.ceil(maxP + 0.5)];
+  // Mostra solo ogni 12 tick (ogni ~1 ora)
+  const tickIndexes = formatted.map((d, i) => i).filter((i) => i % 12 === 0);
+
+  return (
+    <div className="pressure-sparkline">
+      <div className="sparkline-title">Pressione ultime 24h</div>
+      <ResponsiveContainer width="100%" height={90}>
+        <AreaChart
+          data={formatted}
+          margin={{ top: 4, right: 16, left: -16, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="pressGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop
+                offset="5%"
+                stopColor="rgba(255,255,255,0.6)"
+                stopOpacity={0.6}
+              />
+              <stop
+                offset="95%"
+                stopColor="rgba(255,255,255,0)"
+                stopOpacity={0}
+              />
+            </linearGradient>
+          </defs>
+          <XAxis
+            dataKey="t"
+            ticks={tickIndexes.map((i) => formatted[i]?.t)}
+            tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            domain={domain}
+            tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "rgba(0,0,0,0.6)",
+              border: "none",
+              borderRadius: 6,
+              color: "white",
+              fontSize: 11,
+            }}
+            formatter={(v) => [`${v.toFixed(1)} hPa`, "Pressione"]}
+            labelFormatter={(l) => `Ore ${l}`}
+          />
+          <Area
+            type="monotone"
+            dataKey="p"
+            stroke="rgba(255,255,255,0.9)"
+            strokeWidth={1.5}
+            fill="url(#pressGrad)"
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
 
 // Componente per una singola metrica
 const WeatherMetric = ({
@@ -599,16 +816,41 @@ function App() {
             maxTime={stats?.pressureMaxTime}
             decimals={1}
           />
-          <WeatherMetric
-            icon={<WiWindy />}
-            label="Vento"
-            value={metric.windSpeed}
-            unit=" km/h"
-            max={stats?.windspeedMax}
-            maxTime={stats?.windspeedMaxTime}
-            showMin={false}
-            decimals={1}
-          />
+          {weatherData?.pressureHistory?.length > 0 && (
+            <PressureSparkline data={weatherData.pressureHistory} />
+          )}
+          <div className="weather-metric">
+            <div className="metric-header">
+              <WiWindy size={40} />
+              <span>Vento</span>
+            </div>
+            <div className="metric-value">
+              {parseFloat(metric.windSpeed).toFixed(1)} km/h
+            </div>
+            <div className="metric-stats">
+              <div>
+                Max:{" "}
+                {stats?.windspeedMax != null
+                  ? parseFloat(stats.windspeedMax).toFixed(1)
+                  : "N/D"}{" "}
+                km/h
+                {stats?.windspeedMaxTime && (
+                  <span className="time-stamp">
+                    {new Date(stats.windspeedMaxTime).toLocaleTimeString(
+                      "it-IT",
+                      { hour: "2-digit", minute: "2-digit" },
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="weather-metric">
+            <div className="metric-header">
+              <span>Direzione Vento</span>
+            </div>
+            <WindCompass degrees={current.winddir} />
+          </div>
           <WeatherMetric
             icon={<WiWindy />}
             label="Raffica"
