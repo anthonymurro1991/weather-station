@@ -29,14 +29,14 @@ const WindCompass = ({ degrees }) => {
   const dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
   const label = dirs[Math.round(degrees / 45) % 8];
 
-  const size = 130;
+  const size = 140;
   const cx = size / 2,
     cy = size / 2,
-    r = 48;
+    r = 52;
   const toRad = (deg) => (deg - 90) * (Math.PI / 180);
-  const tipLen = 38,
-    tailLen = 20,
-    halfW = 7;
+  const tipLen = 41,
+    tailLen = 22,
+    halfW = 8;
 
   const tipX = cx + tipLen * Math.cos(toRad(degrees));
   const tipY = cy + tipLen * Math.sin(toRad(degrees));
@@ -144,7 +144,7 @@ const WindCompass = ({ degrees }) => {
         <circle
           cx={cx}
           cy={cy}
-          r="4"
+          r="7"
           fill="white"
           stroke="rgba(0,0,0,0.2)"
           strokeWidth="1"
@@ -821,6 +821,12 @@ function App() {
           )}
           <div className="weather-metric">
             <div className="metric-header">
+              <span>Direzione Vento</span>
+            </div>
+            <WindCompass degrees={current.winddir} />
+          </div>
+          <div className="weather-metric">
+            <div className="metric-header">
               <WiWindy size={40} />
               <span>Vento</span>
             </div>
@@ -844,12 +850,6 @@ function App() {
                 )}
               </div>
             </div>
-          </div>
-          <div className="weather-metric">
-            <div className="metric-header">
-              <span>Direzione Vento</span>
-            </div>
-            <WindCompass degrees={current.winddir} />
           </div>
           <WeatherMetric
             icon={<WiWindy />}
