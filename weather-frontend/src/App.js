@@ -633,10 +633,15 @@ function App() {
   const weatherDescriptionText =
     weatherData.description || weatherCondition || "";
 
-  const lastUpdatedTime = new Date().toLocaleTimeString("it-IT", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const lastUpdatedTime = current.obsTimeLocal
+    ? new Date(current.obsTimeLocal).toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : new Date().toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
   return (
     <div className={`App ${backgroundClass}`}>
