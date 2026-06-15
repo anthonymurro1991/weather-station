@@ -6,6 +6,8 @@
 // Input: array observations da /v2/pws/observations/all/1day
 //   Ogni slot: obs.metric.pressureMax / pressureMin
 //              obs.humidityHigh / humidityLow / humidityAvg
+//
+// Trend pressione calcolato su base 12h (non 6h).
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -21,9 +23,9 @@ function avg(values) {
  * Calcola il trend di pressione e umidità.
  *
  * Pressione: delta tra media degli ultimi 6 slot (~30 min, "adesso") e
- *   media dei 6 slot di ~6 ore fa. Soglie meteorologiche standard su 6h:
- *   delta >= +3 hPa → rising-fast, >= +1 → rising,
- *   delta <= -1 hPa → falling,     <= -3 → falling-fast.
+ *   media dei 6 slot di ~12 ore fa. Soglie meteorologiche standard su 12h:
+ *   delta >= +6 hPa → rising-fast, >= +2 → rising,
+ *   delta <= -2 hPa → falling,     <= -6 → falling-fast.
  *
  * Umidità: stesso approccio — confronto recente vs ~6h fa.
  *
@@ -42,10 +44,10 @@ export function computeTrend(observations) {
   const total = observations.length;
   // Ultimi 6 slot ≈ 30 min → valore "adesso"
   const recentSlots = observations.slice(Math.max(0, total - 6));
-  // Slot 66–72 dal fondo ≈ 6 ore fa → valore "passato"
+  // Slot 138–144 dal fondo ≈ 12 ore fa → valore "passato"
   const olderSlots = observations.slice(
-    Math.max(0, total - 72),
-    Math.max(0, total - 66),
+    Math.max(0, total - 144),
+    Math.max(0, total - 138),
   );
 
   // ── Trend pressione — delta hPa reali su ~6 ore ───────────────────────────
@@ -59,10 +61,10 @@ export function computeTrend(observations) {
   let pressureTrend = "stable";
   if (recentPressure != null && olderPressure != null) {
     const dp = recentPressure - olderPressure;
-    if (dp >= 3) pressureTrend = "rising-fast";
-    else if (dp >= 1) pressureTrend = "rising";
-    else if (dp <= -3) pressureTrend = "falling-fast";
-    else if (dp <= -1) pressureTrend = "falling";
+    if (dp >= 6) pressureTrend = "rising-fast";
+    else if (dp >= 2) pressureTrend = "rising";
+    else if (dp <= -6) pressureTrend = "falling-fast";
+    else if (dp <= -2) pressureTrend = "falling";
   }
 
   // ── Trend umidità — delta % su ~6 ore ────────────────────────────────────

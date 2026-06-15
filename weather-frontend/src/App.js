@@ -25,7 +25,7 @@ import {
 import { MdShowChart } from "react-icons/md";
 
 // Componente bussola vento
-const WindCompass = ({ degrees }) => {
+const WindCompass = ({ degrees, isLight }) => {
   if (degrees == null) return null;
   const dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
   const label = dirs[Math.round(degrees / 45) % 8];
@@ -57,6 +57,30 @@ const WindCompass = ({ degrees }) => {
   const btrx = tailX - halfW * 0.6 * Math.cos(perpRad);
   const btry = tailY - halfW * 0.6 * Math.sin(perpRad);
 
+  const c = isLight
+    ? {
+        ring: "rgba(71,85,105,0.15)",
+        ringStroke: "rgba(71,85,105,0.4)",
+        tick: "rgba(71,85,105,0.5)",
+        labelN: "#475569",
+        labelOther: "rgba(71,85,105,0.85)",
+        arrow: "#475569",
+        arrowBody: "rgba(71,85,105,0.45)",
+        arrowTail: "rgba(71,85,105,0.35)",
+        center: "#475569",
+      }
+    : {
+        ring: "rgba(255,255,255,0.08)",
+        ringStroke: "rgba(255,255,255,0.35)",
+        tick: "rgba(255,255,255,0.45)",
+        labelN: "white",
+        labelOther: "rgba(255,255,255,0.85)",
+        arrow: "white",
+        arrowBody: "rgba(255,255,255,0.4)",
+        arrowTail: "rgba(255,255,255,0.35)",
+        center: "white",
+      };
+
   return (
     <div className="wind-compass">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -64,8 +88,8 @@ const WindCompass = ({ degrees }) => {
           cx={cx}
           cy={cy}
           r={r}
-          fill="rgba(255,255,255,0.08)"
-          stroke="rgba(255,255,255,0.35)"
+          fill={c.ring}
+          stroke={c.ringStroke}
           strokeWidth="1.5"
         />
         {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
@@ -77,7 +101,7 @@ const WindCompass = ({ degrees }) => {
               y1={cy + (r - 6) * Math.sin(ar)}
               x2={cx + r * Math.cos(ar)}
               y2={cy + r * Math.sin(ar)}
-              stroke="rgba(255,255,255,0.45)"
+              stroke={c.tick}
               strokeWidth="1"
             />
           );
@@ -86,7 +110,7 @@ const WindCompass = ({ degrees }) => {
           x={cx}
           y={cy - r + 13}
           textAnchor="middle"
-          fill="white"
+          fill={c.labelN}
           fontSize="13"
           fontWeight="700"
         >
@@ -96,7 +120,7 @@ const WindCompass = ({ degrees }) => {
           x={cx}
           y={cy + r - 4}
           textAnchor="middle"
-          fill="rgba(255,255,255,0.85)"
+          fill={c.labelOther}
           fontSize="11"
           fontWeight="600"
         >
@@ -106,7 +130,7 @@ const WindCompass = ({ degrees }) => {
           x={cx + r - 5}
           y={cy + 4}
           textAnchor="middle"
-          fill="rgba(255,255,255,0.85)"
+          fill={c.labelOther}
           fontSize="11"
           fontWeight="600"
         >
@@ -116,16 +140,16 @@ const WindCompass = ({ degrees }) => {
           x={cx - r + 5}
           y={cy + 4}
           textAnchor="middle"
-          fill="rgba(255,255,255,0.85)"
+          fill={c.labelOther}
           fontSize="11"
           fontWeight="600"
         >
           O
         </text>
-        {/* triangolo punta — bianco */}
+        {/* triangolo punta */}
         <polygon
           points={`${tipX},${tipY} ${blx},${bly} ${brx},${bry}`}
-          fill="white"
+          fill={c.arrow}
         />
         {/* corpo ago */}
         <line
@@ -133,20 +157,20 @@ const WindCompass = ({ degrees }) => {
           y1={cy}
           x2={tailX}
           y2={tailY}
-          stroke="rgba(255,255,255,0.4)"
+          stroke={c.arrowBody}
           strokeWidth="2"
           strokeLinecap="round"
         />
-        {/* triangolo coda — semi-trasparente */}
+        {/* triangolo coda */}
         <polygon
           points={`${tailX},${tailY} ${btlx},${btly} ${btrx},${btry}`}
-          fill="rgba(255,255,255,0.35)"
+          fill={c.arrowTail}
         />
         <circle
           cx={cx}
           cy={cy}
           r="7"
-          fill="white"
+          fill={c.center}
           stroke="rgba(0,0,0,0.2)"
           strokeWidth="1"
         />
@@ -159,7 +183,7 @@ const WindCompass = ({ degrees }) => {
 };
 
 // Componente sparkline pressione
-const PressureSparkline = ({ data }) => {
+const PressureSparkline = ({ data, isLight }) => {
   if (!data || data.length === 0) return null;
   const formatted = data.map((d) => ({
     t: d.t?.substring(11, 16) ?? "",
@@ -187,12 +211,16 @@ const PressureSparkline = ({ data }) => {
             <linearGradient id="pressGrad" x1="0" y1="0" x2="0" y2="1">
               <stop
                 offset="5%"
-                stopColor="rgba(255,255,255,0.6)"
+                stopColor={
+                  isLight ? "rgba(71,85,105,0.5)" : "rgba(255,255,255,0.6)"
+                }
                 stopOpacity={0.6}
               />
               <stop
                 offset="95%"
-                stopColor="rgba(255,255,255,0)"
+                stopColor={
+                  isLight ? "rgba(71,85,105,0)" : "rgba(255,255,255,0)"
+                }
                 stopOpacity={0}
               />
             </linearGradient>
@@ -200,13 +228,19 @@ const PressureSparkline = ({ data }) => {
           <XAxis
             dataKey="t"
             ticks={tickIndexes.map((i) => formatted[i]?.t)}
-            tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
+            tick={{
+              fill: isLight ? "rgba(71,85,105,0.8)" : "rgba(255,255,255,0.7)",
+              fontSize: 10,
+            }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             domain={domain}
-            tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
+            tick={{
+              fill: isLight ? "rgba(71,85,105,0.8)" : "rgba(255,255,255,0.7)",
+              fontSize: 10,
+            }}
             axisLine={false}
             tickLine={false}
           />
@@ -224,7 +258,7 @@ const PressureSparkline = ({ data }) => {
           <Area
             type="monotone"
             dataKey="p"
-            stroke="rgba(255,255,255,0.9)"
+            stroke={isLight ? "rgba(71,85,105,0.9)" : "rgba(255,255,255,0.9)"}
             strokeWidth={1.5}
             fill="url(#pressGrad)"
             dot={false}
@@ -688,6 +722,12 @@ function App() {
     metric.temp,
   );
   const backgroundClass = weatherData.backgroundClass || "weather-bg-sunny";
+  const isLight = [
+    "weather-bg-sunny",
+    "weather-bg-mild",
+    "weather-bg-cloudy",
+    "weather-bg-foggy",
+  ].includes(backgroundClass);
 
   // Descrizione calcolata dal backend
   const weatherDescriptionText =
@@ -821,13 +861,16 @@ function App() {
             decimals={1}
           />
           {weatherData?.pressureHistory?.length > 0 && (
-            <PressureSparkline data={weatherData.pressureHistory} />
+            <PressureSparkline
+              data={weatherData.pressureHistory}
+              isLight={isLight}
+            />
           )}
           <div className="weather-metric">
             <div className="metric-header">
               <span>Direzione Vento</span>
             </div>
-            <WindCompass degrees={current.winddir} />
+            <WindCompass degrees={current.winddir} isLight={isLight} />
           </div>
           <div className="weather-metric">
             <div className="metric-header">
