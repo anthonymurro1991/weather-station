@@ -270,6 +270,89 @@ const PressureSparkline = ({ data, isLight }) => {
   );
 };
 
+// Componente sparkline umidità
+const HumiditySparkline = ({ data, isLight }) => {
+  if (!data || data.length === 0) return null;
+  const formatted = data.map((d) => ({
+    t: d.t?.substring(11, 16) ?? "",
+    h: d.h,
+  }));
+  const tickIndexes = formatted.map((d, i) => i).filter((i) => i % 12 === 0);
+
+  return (
+    <div className="pressure-sparkline">
+      <div className="metric-header">
+        <WiHumidity size={28} />
+        <span>Umidità ultime 24h</span>
+      </div>
+      <ResponsiveContainer width="100%" height={90}>
+        <AreaChart
+          data={formatted}
+          margin={{ top: 4, right: 16, left: -16, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="humGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop
+                offset="5%"
+                stopColor={
+                  isLight ? "rgba(71,85,105,0.5)" : "rgba(255,255,255,0.6)"
+                }
+                stopOpacity={0.6}
+              />
+              <stop
+                offset="95%"
+                stopColor={
+                  isLight ? "rgba(71,85,105,0)" : "rgba(255,255,255,0)"
+                }
+                stopOpacity={0}
+              />
+            </linearGradient>
+          </defs>
+          <XAxis
+            dataKey="t"
+            ticks={tickIndexes.map((i) => formatted[i]?.t)}
+            tick={{
+              fill: isLight ? "rgba(71,85,105,0.8)" : "rgba(255,255,255,0.7)",
+              fontSize: 10,
+            }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            domain={[0, 100]}
+            tick={{
+              fill: isLight ? "rgba(71,85,105,0.8)" : "rgba(255,255,255,0.7)",
+              fontSize: 10,
+            }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "rgba(0,0,0,0.6)",
+              border: "none",
+              borderRadius: 6,
+              color: "white",
+              fontSize: 11,
+            }}
+            formatter={(v) => [`${v.toFixed(0)}%`, "Umidità"]}
+            labelFormatter={(l) => `Ore ${l}`}
+          />
+          <Area
+            type="monotone"
+            dataKey="h"
+            stroke={isLight ? "rgba(71,85,105,0.9)" : "rgba(255,255,255,0.9)"}
+            strokeWidth={1.5}
+            fill="url(#humGrad)"
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 // Componente per una singola metrica
 const WeatherMetric = ({
   icon,
@@ -743,6 +826,18 @@ function App() {
         </div>
 
         <div className="weather-grid">
+          {weatherData?.pressureHistory?.length > 0 && (
+            <PressureSparkline
+              data={weatherData.pressureHistory}
+              isLight={isLight}
+            />
+          )}
+          {weatherData?.humidityHistory?.length > 0 && (
+            <HumiditySparkline
+              data={weatherData.humidityHistory}
+              isLight={isLight}
+            />
+          )}
           <WeatherMetric
             icon={<WiHumidity />}
             label="Umidità"
@@ -765,12 +860,6 @@ function App() {
             maxTime={stats?.pressureMaxTime}
             decimals={1}
           />
-          {weatherData?.pressureHistory?.length > 0 && (
-            <PressureSparkline
-              data={weatherData.pressureHistory}
-              isLight={isLight}
-            />
-          )}
           <div className="weather-metric">
             <div className="metric-header">
               <span>Direzione Vento</span>

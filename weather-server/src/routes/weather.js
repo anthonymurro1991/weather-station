@@ -70,6 +70,18 @@ router.get("/all", async (req, res) => {
       }))
       .filter((o) => o.p != null);
 
+    const humidityHistory = observations
+      .map((o) => {
+        const high = o.humidityHigh ?? null;
+        const low = o.humidityLow ?? null;
+        const h =
+          high != null && low != null
+            ? Math.round((high + low) / 2)
+            : (high ?? low ?? o.humidity ?? null);
+        return { t: o.obsTimeLocal, h };
+      })
+      .filter((o) => o.h != null);
+
     res.json({
       current: currentData,
       stats,
@@ -78,6 +90,7 @@ router.get("/all", async (req, res) => {
       pressureTrend,
       rainProbability,
       pressureHistory,
+      humidityHistory,
       iconName,
       backgroundClass,
       faviconName,
