@@ -40,8 +40,4 @@ app.use((req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Meteo Murro API server sulla porta ${PORT}`);
-  console.log(`Ambiente: ${process.env.NODE_ENV || "development"}`);
-  console.log(`Stazione meteo: ${STATION_ID}`);
-});
+app.listen(PORT, () => {});

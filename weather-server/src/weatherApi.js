@@ -17,7 +17,6 @@ const BASE_URL = "https://api.weather.com/v2/pws/observations";
  */
 export async function fetchCurrentWeather() {
   const url = `${BASE_URL}/current?stationId=${STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${API_KEY}`;
-  console.log("\nFetching current weather from Weather.com...");
   const { data } = await axios.get(url);
   return data;
 }
@@ -29,7 +28,6 @@ export async function fetchCurrentWeather() {
  */
 export async function fetchDailyStats() {
   const url = `${BASE_URL}/all/1day?stationId=${STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${API_KEY}`;
-  console.log("\nFetching daily observations from Weather.com...");
   const { data } = await axios.get(url);
   return data;
 }

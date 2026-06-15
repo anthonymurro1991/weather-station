@@ -430,8 +430,6 @@ function isDayTime() {
 // Funzione per cambiare dinamicamente il favicon in base alle condizioni meteo.
 // faviconName è calcolato dal backend (es. "rain", "cloudy", "storm", "night", "sunny").
 function changeFavicon(faviconName) {
-  console.log(`Changing favicon to: ${faviconName}`);
-
   // Ottieni l'elemento favicon o creane uno nuovo se non esiste
   let favicon = document.getElementById("favicon");
   if (!favicon) {
@@ -447,13 +445,6 @@ function changeFavicon(faviconName) {
     // Imposta un percorso assoluto con PUBLIC_URL e usa SVG invece di PNG
     const iconPath = `${process.env.PUBLIC_URL}/favicons/svg/favicon-${faviconName}.svg?v=${timestamp}`;
 
-    // Log dettagliato dei percorsi
-    console.log(`Tentativo di cambio favicon con i seguenti dettagli:`);
-    console.log(`- PUBLIC_URL: ${process.env.PUBLIC_URL}`);
-    console.log(`- Nome favicon selezionato: ${faviconName}`);
-    console.log(`- Percorso completo: ${iconPath}`);
-    console.log(`- Percorso del documento: ${document.location.href}`);
-
     // Imposta il favicon
     favicon.href = iconPath;
     favicon.type = "image/svg+xml"; // Importante specificare il tipo per SVG
@@ -468,24 +459,10 @@ function changeFavicon(faviconName) {
       }
     });
 
-    console.log(`Favicon impostato a: ${iconPath}`);
-
     // Verifica se l'icona esiste effettivamente (questo è asincrono)
-    fetch(iconPath)
-      .then((response) => {
-        if (response.ok) {
-          console.log(
-            `✅ Favicon trovato e caricato correttamente: ${iconPath}`,
-          );
-        } else {
-          console.warn(
-            `⚠️ Favicon non trovato (status: ${response.status}): ${iconPath}`,
-          );
-        }
-      })
-      .catch((error) => {
-        console.error(`❌ Errore nel controllo del favicon: ${error.message}`);
-      });
+    fetch(iconPath).catch((error) => {
+      console.error(`❌ Errore nel controllo del favicon: ${error.message}`);
+    });
 
     // Impostiamo un titolo fisso senza la descrizione meteo
     document.title = "Meteo Murro";
@@ -505,71 +482,10 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("Tentativo di connessione al backend...");
         // Usa il nuovo endpoint unificato con URL dinamico da variabili d'ambiente
         const response = await axios.get(
           `${process.env.REACT_APP_API_URL}/api/weather/all`,
         );
-
-        // Log dettagliato con focus sui dati statistici
-        console.log(
-          "Dati ricevuti dal backend:",
-          JSON.stringify(response.data, null, 2),
-        );
-        console.log(
-          "Statistiche min/max ricevute:",
-          JSON.stringify(response.data.stats, null, 2),
-        );
-
-        // Verifica presenza di statistiche
-        if (!response.data.stats) {
-          console.warn(
-            "ATTENZIONE: Nessuna statistica min/max ricevuta dal backend",
-          );
-        } else {
-          // Conta quanti valori null ci sono nelle statistiche
-          const statsValues = Object.values(response.data.stats);
-          const nullValues = statsValues.filter((v) => v === null).length;
-          console.log(
-            `Statistiche: ${nullValues} valori null su ${statsValues.length} totali`,
-          );
-        }
-
-        // Verifica presenza di osservazioni
-        if (
-          !response.data.current?.observations ||
-          response.data.current.observations.length === 0
-        ) {
-          console.warn("ATTENZIONE: Nessuna osservazione corrente ricevuta");
-        } else {
-          console.log(
-            "Numero di osservazioni ricevute:",
-            response.data.current.observations.length,
-          );
-        }
-
-        // Aggiungiamo un controllo specifico per l'umidità
-        if (response.data.current?.observations?.length > 0) {
-          const currentObs = response.data.current.observations[0];
-          console.log("Verifica umidità:");
-          console.log("- current.humidity:", currentObs.humidity);
-          console.log(
-            "- current.metric.humidity:",
-            currentObs.metric?.humidity,
-          );
-
-          // Aggiungiamo un controllo per tutte le proprietà dell'osservazione
-          console.log(
-            "Proprietà dell'osservazione corrente:",
-            Object.keys(currentObs).join(", "),
-          );
-          if (currentObs.metric) {
-            console.log(
-              "Proprietà di metric:",
-              Object.keys(currentObs.metric).join(", "),
-            );
-          }
-        }
 
         setWeatherData(response.data);
         setError(null);
@@ -646,9 +562,6 @@ function App() {
     // Usa un percorso assoluto con process.env.PUBLIC_URL
     const iconPath = `${process.env.PUBLIC_URL}/favicons/svg/favicon-${isDay ? "sunny" : "night"}.svg?v=${new Date().getTime()}`;
     favicon.href = iconPath;
-    console.log(
-      `Favicon iniziale impostato a: ${iconPath} (${isDay ? "giorno" : "notte"})`,
-    );
 
     // Esegui una pulizia rimuovendo qualsiasi favicon statico che potrebbe essere stato specificato in HTML
     const existingFavicons = document.querySelectorAll(
@@ -657,29 +570,16 @@ function App() {
     existingFavicons.forEach((link) => {
       if (link.id !== "favicon") {
         document.head.removeChild(link);
-        console.log("Rimosso favicon statico precedente");
       }
     });
 
     // Verifica se l'icona esiste effettivamente (questo è asincrono)
     fetch(iconPath);
-    fetch(iconPath)
-      .then((response) => {
-        if (response.ok) {
-          console.log(
-            `✅ Favicon iniziale trovato e caricato correttamente: ${iconPath}`,
-          );
-        } else {
-          console.warn(
-            `⚠️ Favicon iniziale non trovato (status: ${response.status}): ${iconPath}`,
-          );
-        }
-      })
-      .catch((error) => {
-        console.error(
-          `❌ Errore nel controllo del favicon iniziale: ${error.message}`,
-        );
-      });
+    fetch(iconPath).catch((error) => {
+      console.error(
+        `❌ Errore nel controllo del favicon iniziale: ${error.message}`,
+      );
+    });
   }, []);
 
   const current = weatherData?.current?.observations?.[0];
