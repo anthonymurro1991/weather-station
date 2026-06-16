@@ -31,34 +31,68 @@ Questa guida ti aiuterà a mettere online la tua applicazione meteo, sia il fron
      - `STATION_ID`: IBARIA12
      - `NODE_ENV`: production
 
+### Problema: cold start dopo inattività (piano gratuito)
+
+Sul piano gratuito di Render, il server si **spegne automaticamente dopo 15 minuti di inattività** e impiega 30–60 secondi a ripartire alla prima richiesta. Questo causa un lungo caricamento iniziale dell'app.
+
+**Soluzioni pratiche:**
+
+#### Opzione A — Ping periodico con cron-job.org (gratuito, consigliato)
+
+1. Registrati su [cron-job.org](https://cron-job.org/) (gratuito)
+2. Crea un nuovo cronjob:
+   - URL: `https://tuo-backend.onrender.com/api/weather/all`
+   - Intervallo: ogni **10 minuti**
+3. Il server non si spegnerà mai perché riceve richieste continue
+
+#### Opzione B — Ping con UptimeRobot (gratuito)
+
+1. Registrati su [UptimeRobot](https://uptimerobot.com/) (piano gratuito)
+2. Aggiungi un nuovo monitor:
+   - Tipo: **HTTP(s)**
+   - URL: `https://tuo-backend.onrender.com/api/weather/all`
+   - Intervallo: ogni **5 minuti**
+3. Bonus: ricevi anche una notifica se il server va davvero offline
+
+#### Opzione C — Passare al piano Starter di Render ($7/mese)
+
+Il piano a pagamento **non spegne mai** il server. Se l'app è usata regolarmente, è la soluzione più semplice.
+
+> **Nota:** Vercel (frontend) non ha questo problema perché serve file statici — il cold start riguarda solo il backend su Render.
+
 ## Opzione 2: Hosting con VPS (DigitalOcean, Linode, etc.)
 
 ### Configurazione del server
 
 1. Crea un droplet su DigitalOcean (il piano base da $5/mese è sufficiente)
 2. Connettiti via SSH e installa Node.js:
+
    ```bash
    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
    sudo apt-get install -y nodejs
    ```
 
 3. Installa Nginx come reverse proxy:
+
    ```bash
    sudo apt update
    sudo apt install nginx
    ```
 
 4. Carica i tuoi file sul server o clona il repository:
+
    ```bash
    git clone https://github.com/tuo-username/meteo-murro.git
    ```
 
 5. Installa PM2 per gestire il processo Node.js:
+
    ```bash
    sudo npm install -g pm2
    ```
 
 6. Avvia il backend con PM2:
+
    ```bash
    cd weather-server
    npm install
@@ -66,6 +100,7 @@ Questa guida ti aiuterà a mettere online la tua applicazione meteo, sia il fron
    ```
 
 7. Configura Nginx per servire il frontend e fare da proxy per il backend:
+
    ```nginx
    server {
      listen 80;
@@ -89,6 +124,7 @@ Questa guida ti aiuterà a mettere online la tua applicazione meteo, sia il fron
    ```
 
 8. Riavvia Nginx:
+
    ```bash
    sudo systemctl restart nginx
    ```
@@ -98,6 +134,7 @@ Questa guida ti aiuterà a mettere online la tua applicazione meteo, sia il fron
 ## Opzione 3: Hosting Docker con Docker Compose
 
 1. Crea un file `Dockerfile` per il backend:
+
    ```Dockerfile
    FROM node:18-alpine
    WORKDIR /app
@@ -109,6 +146,7 @@ Questa guida ti aiuterà a mettere online la tua applicazione meteo, sia il fron
    ```
 
 2. Crea un file `Dockerfile` per il frontend:
+
    ```Dockerfile
    FROM node:18-alpine as build
    WORKDIR /app
@@ -125,8 +163,9 @@ Questa guida ti aiuterà a mettere online la tua applicazione meteo, sia il fron
    ```
 
 3. Crea un file `docker-compose.yml`:
+
    ```yaml
-   version: '3'
+   version: "3"
    services:
      api:
        build: ./weather-server
@@ -162,11 +201,13 @@ Ngrok è uno strumento che permette di esporre rapidamente un server locale a in
 ### Passo 2: Avviare il backend e il frontend localmente
 
 1. Avvia prima il backend:
+
    ```bash
    cd weather-server
    npm install
    node index.js
    ```
+
    Dovrebbe essere in esecuzione su http://localhost:4000
 
 2. In un nuovo terminale, avvia il frontend:
@@ -182,6 +223,7 @@ Ngrok è uno strumento che permette di esporre rapidamente un server locale a in
 1. Apri un nuovo terminale
 2. Naviga alla cartella dove hai estratto Ngrok
 3. Esegui il comando:
+
    ```bash
    # Se hai un account Ngrok, prima autentica (solo la prima volta)
    ngrok authtoken IL_TUO_TOKEN
@@ -189,6 +231,7 @@ Ngrok è uno strumento che permette di esporre rapidamente un server locale a in
    # Avvia il tunnel per il backend
    ngrok http 4000
    ```
+
 4. Ngrok mostrerà un URL pubblico (es. https://abc123.ngrok.io)
 5. Copia questo URL, lo userai nel prossimo passo
 
