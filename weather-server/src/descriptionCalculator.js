@@ -12,63 +12,80 @@ function isDayTime() {
 }
 
 /**
- * Deriva internamente la categoria dalle misure numeriche della stazione.
- * Soglie basate sulla scala barometrica di Fitzroy e classificazione WMO:
+ * Classifica le condizioni meteo usando tre parametri chiave:
+ *   P  = pressione attuale (hPa)
+ *   ΔP = variazione pressione nelle ultime 3 ore (hPa)
+ *   RH = umidità relativa (%)
  *
- *  > 1022 hPa          → Fair (sereno/variabile)
- *  1013–1022 hPa       → Changeable (variabile)
- *  1000–1013 hPa       → Rain likely (coperto/nuvoloso)
- *   990–1000 hPa       → Much rain/wind (overcast/maltempo)
- *  < 990 hPa           → Storm (temporale)
+ * Zone di classificazione P+ΔP+RH:
+ *   SERENO:            P > 1018, ΔP ≥ 0, RH < 60
+ *   PARZIALMENTE NUV.: P 1008–1018, |ΔP| ≤ 1, RH 60–85
+ *   NUVOLOSO/PIOGGIA:  P < 1008, RH > 80, ΔP < −1
  *
- * Spread (temp – dewpt):
- *  ≤ 2°C + humidity ≥ 90% → fog (saturazione prossima)
- *  ≤ 5°C                  → aria molto umida
+ * Soglie fisse di sicurezza (priorità assoluta):
+ *   precipRate, neve, temporale (< 990 hPa), nebbia, pressione critica (< 1000 hPa)
  */
-function classifyFromMetrics(pressure, temp, humidity, dewpt, precipRate) {
+function classifyFromMetrics(
+  pressure,
+  temp,
+  humidity,
+  dewpt,
+  precipRate,
+  pressureDelta3h,
+) {
   // Precipitazioni misurate → priorità assoluta
   if (precipRate >= 2) return "rain";
   if (precipRate > 0) return "drizzle";
 
-  // Neve: sotto i 2°C con umidità alta (nevica anche leggermente sopra 0°C)
+  // Neve: sotto i 2°C con umidità alta
   if (temp <= 2 && humidity >= 80) return "snow";
 
-  // Temporale: Fitzroy < 990 hPa = "Storm"
+  // Temporale: pressione estrema
   if (pressure < 990) return "storm";
 
-  // Nebbia: spread temp-dewpt ≤ 2°C e umidità ≥ 90% (WMO: near-saturation)
+  // Nebbia: saturazione prossima (WMO)
   if (temp - dewpt <= 2 && humidity >= 90) return "fog";
 
-  // Depressione marcata (990–1000 hPa): Fitzroy "Much Rain and Wind"
+  // Pressione critica (990–1000 hPa): maltempo certo
   if (pressure < 1000) return "overcast";
 
-  // Pressione sotto la norma (1000–1010 hPa): Fitzroy "Rain"
-  if (pressure < 1010) {
-    if (humidity >= 75) return "overcast";
-    if (humidity >= 55) return "cloudy-mostly";
-    return "cloudy-partly";
+  // ── Classificazione P + ΔP + RH ─────────────────────────────────────────
+  const dp = pressureDelta3h ?? 0;
+
+  // Zona ALTA pressione (P > 1018 hPa)
+  if (pressure > 1018) {
+    if (dp >= 0 && humidity < 60) return "clear";
+    if (humidity < 70) return "clear"; // piccolo calo ma aria secca
+    return "cloudy-partly"; // umidità residua
   }
 
-  // Zona variabile (1010–1022 hPa): Fitzroy "Changeable"
-  if (pressure < 1022) {
-    if (humidity >= 80) return "cloudy-mostly";
+  // Zona INTERMEDIA (1008–1018 hPa)
+  if (pressure >= 1008) {
+    if (dp > 2 && humidity < 65) return "clear"; // netto miglioramento
+    if (dp < -3 && humidity >= 75) return "overcast"; // calo rapido + umido
+    if (dp < -1 && humidity >= 80) return "cloudy-mostly";
+    if (Math.abs(dp) <= 1 && humidity < 60)
+      return dp >= 0 ? "clear" : "cloudy-partly";
+    if (humidity >= 85) return "cloudy-mostly";
     if (humidity >= 60) return "cloudy-partly";
+    return dp >= 0 ? "clear" : "cloudy-partly";
   }
 
-  // Alta pressione (> 1022 hPa): Fitzroy "Fair" → sereno
-  // Se umidità ancora alta, qualche nuvola residua
-  if (humidity >= 70) return "cloudy-partly";
-  return "clear";
+  // Zona BASSA pressione (1000–1008 hPa)
+  if (dp < -1 && humidity > 80) return "overcast";
+  if (humidity >= 80) return "overcast";
+  if (humidity >= 65) return "cloudy-mostly";
+  return "cloudy-partly";
 }
 
 /**
  * Calcola la descrizione testuale delle condizioni meteo.
- * @param {string|null} condition  - Campo "conditions" dall'API (spesso null per le PWS)
- * @param {number}      pressure   - Pressione in hPa
- * @param {number}      temp       - Temperatura in °C
- * @param {number}      humidity   - Umidità relativa in %
- * @param {number}      dewpt      - Punto di rugiada in °C
- * @param {number|null} precipRate - Tasso di precipitazione in mm/h
+ * @param {number}      pressure        - Pressione in hPa
+ * @param {number}      temp            - Temperatura in °C
+ * @param {number}      humidity        - Umidità relativa in %
+ * @param {number}      dewpt           - Punto di rugiada in °C
+ * @param {number|null} precipRate      - Tasso di precipitazione in mm/h
+ * @param {number|null} pressureDelta3h - Variazione pressione nelle ultime 3h (hPa)
  * @returns {string} Descrizione in italiano
  */
 export function getWeatherDescription(
@@ -77,11 +94,17 @@ export function getWeatherDescription(
   humidity,
   dewpt,
   precipRate,
+  pressureDelta3h = null,
 ) {
   const isDay = isDayTime();
   const timeOfDay = isDay ? "" : " notturno";
-  const isRainLikely = pressure < 1010 && humidity >= 80;
-  const isRainVeryLikely = pressure < 1005 && humidity >= 85;
+  const dp = pressureDelta3h ?? 0;
+  const isRainLikely =
+    (pressure < 1010 && humidity >= 80) ||
+    (pressure < 1015 && dp < -2 && humidity >= 75);
+  const isRainVeryLikely =
+    (pressure < 1005 && humidity >= 85) ||
+    (pressure < 1010 && dp < -3 && humidity >= 80);
 
   const category = classifyFromMetrics(
     pressure,
@@ -89,6 +112,7 @@ export function getWeatherDescription(
     humidity,
     dewpt,
     precipRate,
+    pressureDelta3h,
   );
 
   switch (category) {

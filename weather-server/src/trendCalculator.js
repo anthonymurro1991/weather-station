@@ -38,6 +38,7 @@ export function computeTrend(observations) {
       pressureTrend: "stable",
       humidityTrend: "stable",
       forecastText: null,
+      pressureDelta3h: null,
     };
   }
 
@@ -48,6 +49,11 @@ export function computeTrend(observations) {
   const olderSlots = observations.slice(
     Math.max(0, total - 144),
     Math.max(0, total - 138),
+  );
+  // Slot 36–42 dal fondo ≈ 3 ore fa → delta a 3h
+  const slots3hAgo = observations.slice(
+    Math.max(0, total - 42),
+    Math.max(0, total - 36),
   );
 
   // ── Trend pressione — delta hPa reali su ~6 ore ───────────────────────────
@@ -65,6 +71,15 @@ export function computeTrend(observations) {
     else if (dp >= 2) pressureTrend = "rising";
     else if (dp <= -6) pressureTrend = "falling-fast";
     else if (dp <= -2) pressureTrend = "falling";
+  }
+
+  // ── Delta pressione 3h (valore numerico hPa, usato da classifyFromMetrics) ──
+  const pressure3hAgo = avg(
+    slots3hAgo.map((o) => o.metric?.pressureMax ?? o.metric?.pressureMin),
+  );
+  let pressureDelta3h = null;
+  if (recentPressure != null && pressure3hAgo != null) {
+    pressureDelta3h = Math.round((recentPressure - pressure3hAgo) * 10) / 10;
   }
 
   // ── Trend umidità — delta % su ~6 ore ────────────────────────────────────
@@ -91,7 +106,7 @@ export function computeTrend(observations) {
     recentHumidity,
   );
 
-  return { pressureTrend, humidityTrend, forecastText };
+  return { pressureTrend, humidityTrend, forecastText, pressureDelta3h };
 }
 
 /**
@@ -147,79 +162,120 @@ function buildForecastText(pressureTrend, humidityTrend, pressure, humidity) {
 }
 
 /**
- * Stima la probabilità di pioggia (0–95%) basandosi solo sui dati della stazione.
+ * Stima la probabilità di pioggia su tre orizzonti temporali.
  *
- * Fattori:
- *  - precipRate > 0        → sta già piovendo (95%)
- *  - pressureTrend         → falling/falling-fast aumenta probabilità
- *  - humidityTrend         → rising aumenta probabilità
- *  - humidity corrente     → soglie 70% e 85%
- *  - dewpt depression      → (temp - dewpt) < 5°C → aria quasi satura
- *  - trend pressione 3h    → calo rapido nelle ultime 3h
+ * Sistema a punteggio (score) basato su quattro segnali:
+ *   1. ΔP₃h  — variazione pressione nelle ultime 3h (segnale principale)
+ *   2. P     — pressione assoluta (supporto)
+ *   3. RH    — umidità relativa (fondamentale)
+ *   4. T−Td  — spread temperatura/rugiada (saturazione aria)
  *
- * @param {string} pressureTrend
- * @param {string} humidityTrend
- * @param {Array}  observations
- * @param {object} currentObs  - osservazione corrente (metric.temp, metric.dewpt, ecc.)
- * @returns {number} percentuale intera 0–95
+ * Tabella score → probabilità:
+ *   ≤ 0 → bassa  | 1–3 → possibile | 4–6 → probabile | ≥ 7 → molto probabile
+ *
+ * @param {string}      pressureTrend  - trend 12h (rising/falling/...)
+ * @param {string}      humidityTrend
+ * @param {Array}       observations
+ * @param {object}      currentObs
+ * @param {number|null} pressureDelta3h - ΔP nelle ultime 3h (hPa)
+ * @returns {{ probability: number, probability3h: number, probability12h: number }}
  */
 export function computeRainProbability(
   pressureTrend,
   humidityTrend,
   observations,
   currentObs,
+  pressureDelta3h,
 ) {
   const metric = currentObs?.metric || {};
   const humidity = currentObs?.humidity ?? metric.humidity ?? 0;
   const precipRate = metric.precipRate ?? 0;
   const temp = metric.temp ?? null;
   const dewpt = metric.dewpt ?? null;
+  const pressure = metric.pressure ?? null;
+  const dp = pressureDelta3h ?? 0;
 
   // Sta già piovendo
-  if (precipRate > 0) return 95;
+  if (precipRate > 0) {
+    return { probability: 95, probability3h: 95, probability12h: 95 };
+  }
 
-  let prob = 15; // base
+  // ── Funzione di mappatura score → % ────────────────────────────────────
+  function scoreToProb(map, s) {
+    const idx = Math.min(Math.max(Math.round(s), 0), map.length - 1);
+    return map[idx];
+  }
 
-  // Trend pressione
-  if (pressureTrend === "falling-fast") prob += 35;
-  else if (pressureTrend === "falling") prob += 20;
-  else if (pressureTrend === "rising") prob -= 10;
-  else if (pressureTrend === "rising-fast") prob -= 20;
+  // ── Score BASE (rischio corrente) ───────────────────────────────────────
+  let score = 0;
 
-  // Trend umidità
-  if (humidityTrend === "rising-fast") prob += 15;
-  else if (humidityTrend === "rising") prob += 8;
-  else if (humidityTrend === "falling") prob -= 5;
+  // 1. ΔP₃h — segnale più affidabile
+  if (dp < -5) score += 5;
+  else if (dp < -3) score += 4;
+  else if (dp < -1) score += 2;
+  else if (dp > +1) score -= 2;
 
-  // Umidità assoluta corrente
-  if (humidity >= 85) prob += 15;
-  else if (humidity >= 70) prob += 8;
+  // 2. Pressione assoluta
+  if (pressure != null) {
+    if (pressure < 1000) score += 3;
+    else if (pressure < 1010) score += 2;
+    else if (pressure > 1020 && dp >= 0) score -= 3;
+  }
 
-  // Dewpoint depression (temp - dewpt): più è bassa, più l'aria è satura
+  // 3. Umidità relativa
+  if (humidity > 90) score += 3;
+  else if (humidity > 80) score += 2;
+  else if (humidity < 60) score -= 1;
+
+  // 4. Spread T − punto di rugiada
   if (temp != null && dewpt != null) {
-    const depression = temp - dewpt;
-    if (depression < 2) prob += 15;
-    else if (depression < 5) prob += 8;
-    else if (depression > 15) prob -= 5;
+    const spread = temp - dewpt;
+    if (spread < 2) score += 2;
+    else if (spread < 5) score += 1;
+    else if (spread > 15) score -= 1;
   }
 
-  // Calo pressione nelle ultime 3h (slot 30–36 dal fondo ≈ 3h fa)
-  const total = observations.length;
-  const recent3h = observations.slice(Math.max(0, total - 6));
-  const older3h = observations.slice(
-    Math.max(0, total - 36),
-    Math.max(0, total - 30),
-  );
-  const pRecent = avg(
-    recent3h.map((o) => o.metric?.pressureMax ?? o.metric?.pressureMin),
-  );
-  const pOlder = avg(
-    older3h.map((o) => o.metric?.pressureMax ?? o.metric?.pressureMin),
-  );
-  if (pRecent != null && pOlder != null) {
-    const dp3h = pRecent - pOlder;
-    if (dp3h <= -2) prob += 10;
+  // Mappa score → % corrente
+  // score:  0    1    2    3    4    5    6    7    8+
+  const probMap = [5, 15, 25, 40, 55, 68, 78, 87, 93];
+  const probability = scoreToProb(probMap, score);
+
+  // ── Score 3h (imminente) — peso maggiore su ΔP rapido ──────────────────
+  let score3h = 0;
+
+  if (dp < -5) score3h += 6;
+  else if (dp < -3) score3h += 5;
+  else if (dp < -1) score3h += 2;
+  else if (dp > +1) score3h -= 3;
+
+  if (humidity > 90) score3h += 3;
+  else if (humidity > 80) score3h += 2;
+  else if (humidity < 60) score3h -= 1;
+
+  if (temp != null && dewpt != null) {
+    const spread = temp - dewpt;
+    if (spread < 2) score3h += 2;
+    else if (spread < 5) score3h += 1;
   }
 
-  return Math.min(95, Math.max(0, Math.round(prob)));
+  // score:    0    1    2    3    4    5    6    7    8+
+  const prob3hMap = [3, 8, 15, 25, 38, 52, 65, 78, 90];
+  const probability3h = scoreToProb(prob3hMap, score3h);
+
+  // ── Score 12h (medio termine) — aggiunge trend 12h ─────────────────────
+  let score12h = score;
+
+  if (pressureTrend === "falling-fast") score12h += 2;
+  else if (pressureTrend === "falling") score12h += 1;
+  else if (pressureTrend === "rising-fast") score12h -= 2;
+  else if (pressureTrend === "rising") score12h -= 1;
+
+  if (humidityTrend === "rising-fast") score12h += 1;
+  else if (humidityTrend === "falling-fast") score12h -= 1;
+
+  // score:     0    1    2    3    4    5    6    7    8+
+  const prob12hMap = [10, 20, 32, 48, 62, 74, 83, 90, 95];
+  const probability12h = scoreToProb(prob12hMap, score12h);
+
+  return { probability, probability3h, probability12h };
 }

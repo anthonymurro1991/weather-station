@@ -34,13 +34,18 @@ router.get("/all", async (req, res) => {
 
     // Calcola min/max giornalieri dalle osservazioni storiche
     const stats = computeStats(currentObs, observations);
-    const { forecastText, pressureTrend, humidityTrend } =
+    const { forecastText, pressureTrend, humidityTrend, pressureDelta3h } =
       computeTrend(observations);
-    const rainProbability = computeRainProbability(
+    const {
+      probability: rainProbability,
+      probability3h: rainProbability3h,
+      probability12h: rainProbability12h,
+    } = computeRainProbability(
       pressureTrend,
       humidityTrend,
       observations,
       currentObs,
+      pressureDelta3h,
     );
 
     // Calcola la descrizione testuale (logica principale — dati grezzi)
@@ -53,6 +58,7 @@ router.get("/all", async (req, res) => {
       humidity,
       metric.dewpt,
       metric.precipRate,
+      pressureDelta3h,
     );
 
     // Deriva la categoria dalla descrizione — garantisce allineamento icona/sfondo/favicon
@@ -89,6 +95,8 @@ router.get("/all", async (req, res) => {
       trend: forecastText,
       pressureTrend,
       rainProbability,
+      rainProbability3h,
+      rainProbability12h,
       pressureHistory,
       humidityHistory,
       iconName,

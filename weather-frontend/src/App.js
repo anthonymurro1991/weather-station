@@ -932,7 +932,14 @@ function App() {
                 <span>Prob. Pioggia</span>
               </div>
               <div className="metric-value">{weatherData.rainProbability}%</div>
-              <div className="metric-stats"></div>
+              <div className="metric-stats">
+                {weatherData.rainProbability3h != null && (
+                  <div>Entro 3 ore: {weatherData.rainProbability3h}%</div>
+                )}
+                {weatherData.rainProbability12h != null && (
+                  <div>Entro 12 ore: {weatherData.rainProbability12h}%</div>
+                )}
+              </div>
             </div>
           )}
           <WeatherMetric

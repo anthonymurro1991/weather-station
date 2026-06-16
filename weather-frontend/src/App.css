@@ -579,6 +579,26 @@ body {
   font-weight: 500;
 }
 
+.metric-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--text-color-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-color-muted);
+}
+
 /* Timestamp styling */
 .time-stamp {
   font-size: 0.7rem;
