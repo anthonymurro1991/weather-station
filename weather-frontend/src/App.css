@@ -599,6 +599,53 @@ body {
   color: var(--text-color-muted);
 }
 
+/* ── Radar map card ─────────────────────────────────────────────────── */
+.radar-card {
+  margin: 1.5rem auto;
+  max-width: 860px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.radar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.radar-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.radar-map-wrapper {
+  width: 100%;
+  height: 500px;
+}
+
+.radar-attribution {
+  font-size: 0.7rem;
+  color: var(--text-color-faint);
+  text-align: right;
+  padding: 0.3rem 1rem;
+}
+
+.radar-attribution a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 /* Timestamp styling */
 .time-stamp {
   font-size: 0.7rem;

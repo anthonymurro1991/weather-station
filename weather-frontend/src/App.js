@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
+import RadarMap from "./RadarMap";
 import {
   WiDaySunny,
   WiCloud,
@@ -958,6 +959,8 @@ function App() {
             decimals={1}
           />
         </div>
+
+        <RadarMap />
       </main>
     </div>
   );
