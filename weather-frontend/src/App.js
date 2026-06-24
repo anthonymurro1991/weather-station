@@ -549,7 +549,7 @@ function changeFavicon(faviconName) {
     });
 
     // Impostiamo un titolo fisso senza la descrizione meteo
-    document.title = "Meteo Murro";
+    document.title = "Meteo AM - Bariano";
   } catch (e) {
     console.error("Errore nel cambio favicon:", e);
     // Se fallisce, usa il favicon di default SVG
@@ -628,7 +628,7 @@ function App() {
   // Effetto immediato per impostare il favicon di default all'avvio
   useEffect(() => {
     // Imposta subito un favicon di default con un titolo fisso
-    document.title = "Meteo Murro";
+    document.title = "Meteo AM - Bariano";
 
     // Ottieni l'elemento favicon o creane uno nuovo se non esiste
     let favicon = document.getElementById("favicon");
@@ -732,7 +732,7 @@ function App() {
       <main className="dashboard">
         <div className="main-weather-card">
           <div className="card-header">
-            <h2>Stazione Meteo Murro</h2>
+            <h2>Stazione Meteo AM - Bariano</h2>
             <div className="last-updated">
               <div>Ultimo aggiornamento: {lastUpdatedTime}</div>
               <div className="current-clock">
