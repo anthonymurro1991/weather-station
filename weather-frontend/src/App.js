@@ -440,6 +440,118 @@ const WeatherMetric = ({
   );
 };
 
+// Widget Sole & Luna
+const SunMoonWidget = ({ solar }) => {
+  if (!solar) return null;
+  const { sunrise, sunset, phaseName, illumination, emoji } = solar;
+
+  // Calcola progresso arco solare (0..1) rispetto all'ora corrente
+  let dayProgress = null;
+  if (sunrise && sunset) {
+    const now = new Date();
+    const toMinutes = (hhmm) => {
+      const [h, m] = hhmm.split(":").map(Number);
+      return h * 60 + m;
+    };
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const riseMin = toMinutes(sunrise);
+    const setMin = toMinutes(sunset);
+    dayProgress = Math.max(
+      0,
+      Math.min(1, (nowMin - riseMin) / (setMin - riseMin)),
+    );
+  }
+
+  // Arc SVG: semicerchio da sinistra (alba) a destra (tramonto)
+  const r = 44,
+    cx = 56,
+    cy = 56,
+    strokeW = 5;
+  const arcStart = { x: cx - r, y: cy };
+  const arcEnd = { x: cx + r, y: cy };
+  const arcD = `M ${arcStart.x} ${arcStart.y} A ${r} ${r} 0 0 1 ${arcEnd.x} ${arcEnd.y}`;
+  const arcLen = Math.PI * r; // semicircumference
+
+  // Posizione del sole sull'arco
+  let sunX = null,
+    sunY = null;
+  if (dayProgress !== null) {
+    const angle = Math.PI - dayProgress * Math.PI; // da π a 0 (sx→dx)
+    sunX = cx + r * Math.cos(angle);
+    sunY = cy - r * Math.sin(angle);
+  }
+
+  return (
+    <div className="weather-metric sun-moon-widget">
+      {/* Arco solare */}
+      <div className="sun-arc-container">
+        <svg width="112" height="62" viewBox="0 0 112 62">
+          {/* traccia base */}
+          <path
+            d={arcD}
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth={strokeW}
+            strokeLinecap="round"
+          />
+          {/* traccia percorsa */}
+          {dayProgress !== null && (
+            <path
+              d={arcD}
+              fill="none"
+              stroke="rgba(255,210,50,0.85)"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+              strokeDasharray={`${arcLen}`}
+              strokeDashoffset={`${arcLen * (1 - dayProgress)}`}
+            />
+          )}
+          {/* disco solare */}
+          {sunX !== null && (
+            <circle
+              cx={sunX}
+              cy={sunY}
+              r="7"
+              fill="#FFD700"
+              filter="url(#sunGlow)"
+            />
+          )}
+          <defs>
+            <filter id="sunGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+        </svg>
+      </div>
+
+      {/* Alba / Tramonto */}
+      <div className="sun-times">
+        <div className="sun-time-item">
+          <span className="sun-label">Alba</span>
+          <span className="sun-value">{sunrise ?? "—"}</span>
+        </div>
+        <div className="sun-time-item">
+          <span className="sun-label">Tramonto</span>
+          <span className="sun-value">{sunset ?? "—"}</span>
+        </div>
+      </div>
+
+      {/* Fase lunare */}
+      <div className="moon-phase">
+        <span className="moon-emoji">{emoji}</span>
+        <div className="moon-info">
+          <span className="moon-name">{phaseName}</span>
+          <span className="moon-illumination">{illumination}% visibile</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Mappa iconName (calcolato dal backend) → componente React con stile
 function renderWeatherIcon(iconName, temp) {
   const isDay = isDayTime();
@@ -926,6 +1038,7 @@ function App() {
             }
             decimals={1}
           />
+          {weatherData?.solar && <SunMoonWidget solar={weatherData.solar} />}
         </div>
 
         <RadarMap />
