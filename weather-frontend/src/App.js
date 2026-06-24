@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./App.css";
 import RadarMap from "./RadarMap";
@@ -511,57 +511,11 @@ function isDayTime() {
   return hours >= 6 && hours < 20;
 }
 
-// Funzione per cambiare dinamicamente il favicon in base alle condizioni meteo.
-// faviconName è calcolato dal backend (es. "rain", "cloudy", "storm", "night", "sunny").
-function changeFavicon(faviconName) {
-  // Ottieni l'elemento favicon o creane uno nuovo se non esiste
-  let favicon = document.getElementById("favicon");
-  if (!favicon) {
-    favicon = document.createElement("link");
-    favicon.id = "favicon";
-    favicon.rel = "icon";
-    document.head.appendChild(favicon);
-  }
-
-  try {
-    // Crea un timestamp per forzare il ricaricamento dell'icona (evita caching)
-    const timestamp = new Date().getTime();
-    // Imposta un percorso assoluto con PUBLIC_URL e usa SVG invece di PNG
-    const iconPath = `${process.env.PUBLIC_URL}/favicons/svg/favicon-${faviconName}.svg?v=${timestamp}`;
-
-    // Imposta il favicon
-    favicon.href = iconPath;
-    favicon.type = "image/svg+xml"; // Importante specificare il tipo per SVG
-
-    // Rimuovi qualsiasi altro favicon che potrebbe essere stato aggiunto
-    const existingFavicons = document.querySelectorAll(
-      'link[rel="icon"], link[rel="shortcut icon"]',
-    );
-    existingFavicons.forEach((link) => {
-      if (link.id !== "favicon") {
-        document.head.removeChild(link);
-      }
-    });
-
-    // Verifica se l'icona esiste effettivamente (questo è asincrono)
-    fetch(iconPath).catch((error) => {
-      console.error(`❌ Errore nel controllo del favicon: ${error.message}`);
-    });
-
-    // Impostiamo un titolo fisso senza la descrizione meteo
-    document.title = "Meteo AM - Bariano";
-  } catch (e) {
-    console.error("Errore nel cambio favicon:", e);
-    // Se fallisce, usa il favicon di default SVG
-    favicon.href = `${process.env.PUBLIC_URL}/favicons/svg/favicon-sunny.svg?v=${new Date().getTime()}`;
-    favicon.type = "image/svg+xml";
-  }
-}
-
 function App() {
   const [weatherData, setWeatherData] = useState(null);
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const weatherIconRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -612,18 +566,30 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Aggiungiamo un useEffect per cambiare dinamicamente il favicon in base alle condizioni meteo
+  // Aggiorna il favicon usando l'SVG dell'icona già renderizzata nel DOM
   useEffect(() => {
-    if (weatherData?.current?.observations?.[0]) {
-      const current = weatherData.current.observations[0];
-      const metric = current.metric;
-
-      if (metric) {
-        // faviconName calcolato dal backend
-        changeFavicon(weatherData.faviconName || "sunny");
+    if (!weatherIconRef.current) return;
+    const svgEl = weatherIconRef.current.querySelector("svg");
+    if (!svgEl) return;
+    try {
+      const serialized = new XMLSerializer().serializeToString(svgEl);
+      const blob = new Blob([serialized], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      let favicon = document.getElementById("favicon");
+      if (!favicon) {
+        favicon = document.createElement("link");
+        favicon.id = "favicon";
+        favicon.rel = "icon";
+        document.head.appendChild(favicon);
       }
+      const oldHref = favicon.href;
+      favicon.type = "image/svg+xml";
+      favicon.href = url;
+      if (oldHref.startsWith("blob:")) URL.revokeObjectURL(oldHref);
+    } catch (e) {
+      console.warn("Impossibile aggiornare favicon dall'icona:", e);
     }
-  }, [weatherData]); // Esegui quando cambiano i dati meteo
+  }); // senza deps: esegue dopo ogni render, quando il DOM è aggiornato
 
   // Effetto immediato per impostare il favicon di default all'avvio
   useEffect(() => {
@@ -753,7 +719,9 @@ function App() {
           )}
 
           <div className="main-info">
-            <div className="weather-icon-large">{weatherIcon}</div>
+            <div className="weather-icon-large" ref={weatherIconRef}>
+              {weatherIcon}
+            </div>
             <div className="temperature-details">
               <div className="current-temp">
                 {parseFloat(metric.temp).toFixed(1)}°C

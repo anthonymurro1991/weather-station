@@ -5,7 +5,6 @@
 //
 // iconName possibili:     "rain" | "cloud" | "storm" | "fog" | "snow" | "night" | "sunny"
 // backgroundClass esempi: "weather-bg-rain" | "weather-bg-cloudy" | ...
-// faviconName esempi:     "rain" | "cloudy" | "storm" | "foggy" | "snow" | "sunny" | "night" | "hot"
 // ─────────────────────────────────────────────────────────────────────────────
 
 function isDayTime() {
@@ -37,37 +36,6 @@ export function getIconName(category) {
       return "cloud";
     case "clear":
     default:
-      return isDay ? "sunny" : "night";
-  }
-}
-
-/**
- * Restituisce il nome del file favicon da usare nel frontend.
- * I nomi corrispondono ai file SVG in public/favicons/svg/.
- * @param {string|null} category - Categoria canonica da classifyCondition()
- * @param {number}      temp     - Temperatura in °C
- * @returns {string} faviconName
- */
-export function getFaviconName(category, temp) {
-  const isDay = isDayTime();
-  switch (category) {
-    case "drizzle":
-    case "rain":
-      return "rain";
-    case "storm":
-      return "storm";
-    case "snow":
-      return "snow";
-    case "fog":
-      return "foggy";
-    case "overcast":
-    case "cloudy-mostly":
-    case "cloudy-partly":
-    case "cloudy":
-      return "cloudy";
-    case "clear":
-    default:
-      if (temp > 30) return isDay ? "hot" : "night-hot";
       return isDay ? "sunny" : "night";
   }
 }

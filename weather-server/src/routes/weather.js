@@ -13,11 +13,7 @@ import { computeStats } from "../statsCalculator.js";
 import { computeTrend, computeRainProbability } from "../trendCalculator.js";
 import { classifyFromDescription } from "../conditionClassifier.js";
 import { getWeatherDescription } from "../descriptionCalculator.js";
-import {
-  getIconName,
-  getBackgroundClass,
-  getFaviconName,
-} from "../iconCalculator.js";
+import { getIconName, getBackgroundClass } from "../iconCalculator.js";
 
 const router = Router();
 
@@ -66,7 +62,6 @@ router.get("/all", async (req, res) => {
 
     const iconName = getIconName(category);
     const backgroundClass = getBackgroundClass(category, metric.temp);
-    const faviconName = getFaviconName(category, metric.temp);
 
     // Comprimi le osservazioni di pressione per la sparkline (time + valore)
     const pressureHistory = observations
@@ -101,7 +96,6 @@ router.get("/all", async (req, res) => {
       humidityHistory,
       iconName,
       backgroundClass,
-      faviconName,
     });
   } catch (err) {
     res.status(500).json({
