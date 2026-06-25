@@ -15,6 +15,7 @@ import { classifyFromDescription } from "../conditionClassifier.js";
 import { getWeatherDescription } from "../descriptionCalculator.js";
 import { getIconName, getBackgroundClass } from "../iconCalculator.js";
 import { getSunTimes, getMoonPhase } from "../solarCalculator.js";
+import { fetchAlerts } from "../alertCalculator.js";
 
 const router = Router();
 
@@ -64,6 +65,7 @@ router.get("/all", async (req, res) => {
     const iconName = getIconName(category);
     const backgroundClass = getBackgroundClass(category, metric.temp);
     const solar = { ...getSunTimes(), ...getMoonPhase() };
+    const alerts = await fetchAlerts(currentObs);
 
     // Comprimi le osservazioni di pressione per la sparkline (time + valore)
     const pressureHistory = observations
@@ -99,6 +101,7 @@ router.get("/all", async (req, res) => {
       iconName,
       backgroundClass,
       solar,
+      alerts,
     });
   } catch (err) {
     res.status(500).json({

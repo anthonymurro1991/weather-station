@@ -440,6 +440,46 @@ const WeatherMetric = ({
   );
 };
 
+// Widget Alert Meteo
+const ALERT_ICONS = {
+  storm: "⚡",
+  rain: "🌧",
+  snow: "❄️",
+  fog: "🌫",
+  heat: "🌡",
+  uv: "☀️",
+  wind: "💨",
+};
+
+const AlertsWidget = ({ alerts }) => {
+  if (!alerts || alerts.length === 0) {
+    return (
+      <div className="weather-metric alerts-widget alerts-none">
+        <div className="metric-header">
+          <span>Allerte meteo</span>
+        </div>
+        <span className="alert-ok-label">Nessun alert previsto</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="weather-metric alerts-widget">
+      <div className="metric-header">
+        <span>Allerte meteo</span>
+      </div>
+      <div className="alerts-list">
+        {alerts.map((a, i) => (
+          <div key={i} className={`alert-badge alert-${a.level}`}>
+            <span className="alert-icon">{ALERT_ICONS[a.type] ?? "⚠️"}</span>
+            <span className="alert-label">{a.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Widget Sole & Luna
 const SunMoonWidget = ({ solar }) => {
   if (!solar) return null;
@@ -1039,6 +1079,7 @@ function App() {
             decimals={1}
           />
           {weatherData?.solar && <SunMoonWidget solar={weatherData.solar} />}
+          <AlertsWidget alerts={weatherData?.alerts} />
         </div>
 
         <RadarMap />
