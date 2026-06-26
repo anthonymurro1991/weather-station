@@ -674,11 +674,9 @@ const YearlyStatsWidget = ({ yearlyStats, isLight }) => {
 
   const fmtDate = (d) => {
     if (!d) return null;
-    const [datePart, timePart] = d.split(" ");
+    const datePart = d.split(" ")[0];
     const [y, m, day] = datePart.split("-");
-    const date = `${day}/${m}/${y}`;
-    if (timePart && timePart !== "00:00") return `${date} ${timePart}`;
-    return date;
+    return `${day}/${m}/${y}`;
   };
 
   const sorted = [...yearlyStats.years].sort((a, b) => a.year - b.year);
