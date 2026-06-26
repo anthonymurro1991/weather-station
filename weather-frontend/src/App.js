@@ -663,8 +663,119 @@ function isDayTime() {
   return hours >= 6 && hours < 20;
 }
 
+// Widget Statistiche Annuali
+const YearlyStatsWidget = ({ yearlyStats, isLight }) => {
+  if (!yearlyStats?.years?.length) return null;
+  const textMuted = isLight ? "rgba(71,85,105,0.7)" : "rgba(255,255,255,0.6)";
+  const textMain = isLight ? "#1e293b" : "white";
+  const borderColor = isLight
+    ? "rgba(71,85,105,0.15)"
+    : "rgba(255,255,255,0.12)";
+
+  const fmtDate = (d) => {
+    if (!d) return null;
+    const [y, m, day] = d.split("-");
+    return `${day}/${m}/${y}`;
+  };
+
+  const sorted = [...yearlyStats.years].sort((a, b) => a.year - b.year);
+
+  return (
+    <div className="weather-metric yearly-stats-widget">
+      <div className="metric-header">
+        <span>Statistiche Annuali</span>
+      </div>
+      <div className="yearly-stats-scroll">
+        <table className="yearly-stats-table">
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${borderColor}` }}>
+              <th style={{ color: textMuted }}>Anno</th>
+              <th style={{ color: textMuted }}>🌡 T. Max</th>
+              <th style={{ color: textMuted }}>❄️ T. Min</th>
+              <th style={{ color: textMuted }}>💨 Vento</th>
+              <th style={{ color: textMuted }}>💨 Raffica</th>
+              <th style={{ color: textMuted }}>🌧 Pioggia</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((y) => (
+              <tr
+                key={y.year}
+                style={{ borderBottom: `1px solid ${borderColor}` }}
+              >
+                <td style={{ color: textMain, fontWeight: 600 }}>{y.year}</td>
+                <td
+                  data-label="T. Max"
+                  style={{
+                    color: "#ff7675",
+                    cursor: y.tempMaxDate ? "help" : "default",
+                  }}
+                  title={fmtDate(y.tempMaxDate) ?? undefined}
+                >
+                  {y.tempMax != null
+                    ? `${parseFloat(y.tempMax).toFixed(1)}°C`
+                    : "—"}
+                </td>
+                <td
+                  data-label="T. Min"
+                  style={{
+                    color: "#74b9ff",
+                    cursor: y.tempMinDate ? "help" : "default",
+                  }}
+                  title={fmtDate(y.tempMinDate) ?? undefined}
+                >
+                  {y.tempMin != null
+                    ? `${parseFloat(y.tempMin).toFixed(1)}°C`
+                    : "—"}
+                </td>
+                <td
+                  data-label="Vento"
+                  style={{
+                    color: textMain,
+                    cursor: y.windMaxDate ? "help" : "default",
+                  }}
+                  title={fmtDate(y.windMaxDate) ?? undefined}
+                >
+                  {y.windMax != null
+                    ? `${parseFloat(y.windMax).toFixed(1)} km/h`
+                    : "—"}
+                </td>
+                <td
+                  data-label="Raffica"
+                  style={{
+                    color: textMain,
+                    cursor: y.windGustMaxDate ? "help" : "default",
+                  }}
+                  title={fmtDate(y.windGustMaxDate) ?? undefined}
+                >
+                  {y.windGustMax != null
+                    ? `${parseFloat(y.windGustMax).toFixed(1)} km/h`
+                    : "—"}
+                </td>
+                <td
+                  data-label="Pioggia"
+                  style={{
+                    color: "#0984e3",
+                    cursor: y.rainMaxDate ? "help" : "default",
+                  }}
+                  title={fmtDate(y.rainMaxDate) ?? undefined}
+                >
+                  {y.rainMax != null
+                    ? `${parseFloat(y.rainMax).toFixed(1)} mm`
+                    : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [weatherData, setWeatherData] = useState(null);
+  const [yearlyStats, setYearlyStats] = useState(null);
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const weatherIconRef = useRef(null);
@@ -706,6 +817,23 @@ function App() {
 
     fetchData();
     const interval = setInterval(fetchData, 180000); // Aggiorna ogni 3 minuti
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch statistiche annuali (aggiornamento ogni 6 ore)
+  useEffect(() => {
+    const fetchYearly = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/weather/yearly-stats`,
+        );
+        setYearlyStats(response.data);
+      } catch (err) {
+        console.error("Errore statistiche annuali:", err);
+      }
+    };
+    fetchYearly();
+    const interval = setInterval(fetchYearly, 6 * 60 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -1079,6 +1207,9 @@ function App() {
             decimals={1}
           />
           {weatherData?.solar && <SunMoonWidget solar={weatherData.solar} />}
+          {yearlyStats?.years?.length > 0 && (
+            <YearlyStatsWidget yearlyStats={yearlyStats} isLight={isLight} />
+          )}
           <AlertsWidget alerts={weatherData?.alerts} />
         </div>
 

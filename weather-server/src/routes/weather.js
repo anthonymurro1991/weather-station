@@ -8,7 +8,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Router } from "express";
-import { fetchCurrentWeather, fetchDailyStats } from "../weatherApi.js";
+import {
+  fetchCurrentWeather,
+  fetchDailyStats,
+  fetchHistoryDaily,
+} from "../weatherApi.js";
 import { computeStats } from "../statsCalculator.js";
 import { computeTrend, computeRainProbability } from "../trendCalculator.js";
 import { classifyFromDescription } from "../conditionClassifier.js";
@@ -18,6 +22,126 @@ import { getSunTimes, getMoonPhase } from "../solarCalculator.js";
 import { fetchAlerts } from "../alertCalculator.js";
 
 const router = Router();
+
+// ── Cache in-memory per statistiche annuali (TTL 6 ore) ──────────────────────
+const yearlyStatsCache = new Map();
+const YEARLY_CACHE_TTL = 2 * 24 * 60 * 60 * 1000;
+
+/** Formatta un oggetto Date come stringa YYYYMMDD */
+function fmtDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}${m}${d}`;
+}
+
+/**
+ * Suddivide l'intervallo [Jan 1, endDate] in chunk da ≤31 giorni.
+ * @param {number} year
+ * @returns {{ start: string, end: string }[]}
+ */
+function buildYearChunks(year) {
+  const chunks = [];
+  const today = new Date();
+  const rangeEnd = new Date(
+    Math.min(new Date(year, 11, 31).getTime(), today.getTime()),
+  );
+  let cursor = new Date(year, 0, 1);
+  while (cursor <= rangeEnd) {
+    const chunkEnd = new Date(cursor);
+    chunkEnd.setDate(chunkEnd.getDate() + 30); // 31 giorni inclusivi
+    if (chunkEnd > rangeEnd) chunkEnd.setTime(rangeEnd.getTime());
+    chunks.push({ start: fmtDate(cursor), end: fmtDate(chunkEnd) });
+    cursor = new Date(chunkEnd);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return chunks;
+}
+
+async function getYearlyStats(year) {
+  const key = String(year);
+  const now = Date.now();
+  const cached = yearlyStatsCache.get(key);
+  if (cached && now - cached.ts < YEARLY_CACHE_TTL) return cached.data;
+
+  const chunks = buildYearChunks(year);
+  const allObs = [];
+
+  // Richieste sequenziali per evitare rate-limit (max 31 giorni per chiamata)
+  for (let i = 0; i < chunks.length; i++) {
+    const { start, end } = chunks[i];
+    const result = await fetchHistoryDaily(start, end).catch((e) => {
+      console.error(
+        `[yearly] ${year} chunk ${start}-${end} error:`,
+        e.response?.status,
+        e.message,
+      );
+      return null;
+    });
+    if (result?.observations) allObs.push(...result.observations);
+    if (i < chunks.length - 1) await new Promise((r) => setTimeout(r, 300));
+  }
+
+  let tempMax = null,
+    tempMaxDate = null;
+  let tempMin = null,
+    tempMinDate = null;
+  let windMax = null,
+    windMaxDate = null;
+  let windGustMax = null,
+    windGustMaxDate = null;
+  let rainMax = null,
+    rainMaxDate = null;
+
+  for (const obs of allObs) {
+    const m = obs.metric || {};
+    const d = (obs.obsTimeLocal || obs.obsTimeUtc || "").slice(0, 10);
+    // /history/daily restituisce già riepiloghi giornalieri con High/Low
+    if (m.tempHigh != null && (tempMax == null || m.tempHigh > tempMax)) {
+      tempMax = m.tempHigh;
+      tempMaxDate = d;
+    }
+    if (m.tempLow != null && (tempMin == null || m.tempLow < tempMin)) {
+      tempMin = m.tempLow;
+      tempMinDate = d;
+    }
+    if (
+      m.windspeedHigh != null &&
+      (windMax == null || m.windspeedHigh > windMax)
+    ) {
+      windMax = m.windspeedHigh;
+      windMaxDate = d;
+    }
+    if (
+      m.windgustHigh != null &&
+      (windGustMax == null || m.windgustHigh > windGustMax)
+    ) {
+      windGustMax = m.windgustHigh;
+      windGustMaxDate = d;
+    }
+    // precipTotal nel daily è già il totale del giorno
+    if (m.precipTotal != null && (rainMax == null || m.precipTotal > rainMax)) {
+      rainMax = m.precipTotal;
+      rainMaxDate = d;
+    }
+  }
+
+  const data = {
+    year,
+    tempMax,
+    tempMaxDate,
+    tempMin,
+    tempMinDate,
+    windMax,
+    windMaxDate,
+    windGustMax,
+    windGustMaxDate,
+    rainMax,
+    rainMaxDate,
+  };
+  yearlyStatsCache.set(key, { data, ts: now });
+  return data;
+}
 
 router.get("/all", async (req, res) => {
   try {
@@ -108,6 +232,29 @@ router.get("/all", async (req, res) => {
       error: "Failed to fetch unified weather data",
       details: err.message,
     });
+  }
+});
+
+// ── GET /api/weather/yearly-stats ────────────────────────────────────────────
+router.get("/yearly-stats", async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const startYear = 2024;
+    const years = await Promise.all(
+      Array.from({ length: currentYear - startYear + 1 }, (_, i) =>
+        getYearlyStats(startYear + i),
+      ),
+    );
+    // Invia solo anni che hanno almeno un dato
+    res.json({
+      years: years.filter(
+        (y) => y.tempMax != null || y.tempMin != null || y.rainMax != null,
+      ),
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "Failed to fetch yearly stats", details: err.message });
   }
 });
 

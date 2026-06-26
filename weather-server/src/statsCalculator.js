@@ -97,6 +97,15 @@ export function computeStats(currentObs, observations) {
 
   if (!observations || observations.length === 0) return stats;
 
+  // Filtra solo le osservazioni dalla mezzanotte del giorno corrente.
+  // L'endpoint /all/1day copre le ultime 24h a scorrimento, quindi potrebbe
+  // includere dati di ieri. Per i min/max giornalieri usiamo solo oggi.
+  const todayStr = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const todayObs = observations.filter(
+    (o) => o.obsTimeLocal && o.obsTimeLocal.slice(0, 10) === todayStr,
+  );
+  const obs = todayObs.length > 0 ? todayObs : observations;
+
   // Helper: applica il risultato min/max all'oggetto stats
   const apply = (result, minKey, maxKey, minTimeKey, maxTimeKey) => {
     if (result.min !== null) {
@@ -125,17 +134,18 @@ export function computeStats(currentObs, observations) {
 
   // Temperatura: tempLow e tempHigh sono dentro metric
   applyMin(
-    findMinMaxWithTime(observations, (o) => o.metric?.tempLow),
+    findMinMaxWithTime(obs, (o) => o.metric?.tempLow),
     "tempMin",
     "tempMinTime",
   );
   applyMax(
-    findMinMaxWithTime(observations, (o) => o.metric?.tempHigh),
+    findMinMaxWithTime(obs, (o) => o.metric?.tempHigh),
     "tempMax",
     "tempMaxTime",
   );
 
   // Umidità: humidityLow/High sono a radice (fuori da metric)
+  // Usa tutte le 24h (non solo oggi) per mostrare il range completo
   applyMin(
     findMinMaxWithTime(observations, (o) => o.humidityLow),
     "humidityMin",
@@ -148,6 +158,7 @@ export function computeStats(currentObs, observations) {
   );
 
   // Pressione: pressureMin e pressureMax sono dentro metric
+  // Usa tutte le 24h (non solo oggi) per mostrare il range completo
   applyMin(
     findMinMaxWithTime(observations, (o) => o.metric?.pressureMin),
     "pressureMin",
@@ -161,69 +172,66 @@ export function computeStats(currentObs, observations) {
 
   // Velocità vento
   applyMin(
-    findMinMaxWithTime(observations, (o) => o.metric?.windspeedLow),
+    findMinMaxWithTime(obs, (o) => o.metric?.windspeedLow),
     "windspeedMin",
     "windspeedMinTime",
   );
   applyMax(
-    findMinMaxWithTime(observations, (o) => o.metric?.windspeedHigh),
+    findMinMaxWithTime(obs, (o) => o.metric?.windspeedHigh),
     "windspeedMax",
     "windspeedMaxTime",
   );
 
   // Raffica di vento
   applyMin(
-    findMinMaxWithTime(observations, (o) => o.metric?.windgustLow),
+    findMinMaxWithTime(obs, (o) => o.metric?.windgustLow),
     "windgustMin",
     "windgustMinTime",
   );
   applyMax(
-    findMinMaxWithTime(observations, (o) => o.metric?.windgustHigh),
+    findMinMaxWithTime(obs, (o) => o.metric?.windgustHigh),
     "windgustMax",
     "windgustMaxTime",
   );
 
   // Punto di rugiada
   applyMin(
-    findMinMaxWithTime(observations, (o) => o.metric?.dewptLow),
+    findMinMaxWithTime(obs, (o) => o.metric?.dewptLow),
     "dewptMin",
     "dewptMinTime",
   );
   applyMax(
-    findMinMaxWithTime(observations, (o) => o.metric?.dewptHigh),
+    findMinMaxWithTime(obs, (o) => o.metric?.dewptHigh),
     "dewptMax",
     "dewptMaxTime",
   );
 
   // Indice di calore
   applyMin(
-    findMinMaxWithTime(observations, (o) => o.metric?.heatindexLow),
+    findMinMaxWithTime(obs, (o) => o.metric?.heatindexLow),
     "heatindexMin",
     "heatindexMinTime",
   );
   applyMax(
-    findMinMaxWithTime(observations, (o) => o.metric?.heatindexHigh),
+    findMinMaxWithTime(obs, (o) => o.metric?.heatindexHigh),
     "heatindexMax",
     "heatindexMaxTime",
   );
 
   // Temperatura percepita (wind chill)
   applyMin(
-    findMinMaxWithTime(observations, (o) => o.metric?.windchillLow),
+    findMinMaxWithTime(obs, (o) => o.metric?.windchillLow),
     "windchillMin",
     "windchillMinTime",
   );
   applyMax(
-    findMinMaxWithTime(observations, (o) => o.metric?.windchillHigh),
+    findMinMaxWithTime(obs, (o) => o.metric?.windchillHigh),
     "windchillMax",
     "windchillMaxTime",
   );
 
-  // Precipitazioni: valore cumulato, il MAX è il totale giornaliero
-  const precipResult = findMinMaxWithTime(
-    observations,
-    (o) => o.metric?.precipTotal,
-  );
+  // Precipitazioni: valore cumulato che si azzera a mezzanotte.
+  const precipResult = findMinMaxWithTime(obs, (o) => o.metric?.precipTotal);
   if (precipResult.max !== null) {
     stats.precipTotalMax = precipResult.max;
     stats.precipTotalMaxTime = precipResult.maxTime;
