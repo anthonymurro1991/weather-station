@@ -505,9 +505,29 @@ body {
   align-items: stretch;
 }
 
+/* Sovrascrive overflow: hidden e align-items: center di .weather-metric */
+.weather-metric.yearly-stats-widget {
+  overflow: visible;
+  align-items: stretch;
+}
+
+/* Disabilita l'effetto cerchio hover (non clippato con overflow: visible) */
+.weather-metric.yearly-stats-widget::before {
+  display: none;
+}
+
 .yearly-stats-scroll {
-  overflow-x: auto;
+  width: 100%;
+  overflow-x: scroll;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  will-change: scroll-position;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.yearly-stats-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .yearly-stats-table {
@@ -546,6 +566,15 @@ body {
 
 .yearly-stats-table tbody tr:last-child {
   border-bottom: none !important;
+}
+
+.yearly-stat-date {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 400;
+  opacity: 0.75;
+  margin-top: 0.1rem;
+  letter-spacing: 0.01em;
 }
 
 .alerts-none {

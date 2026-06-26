@@ -674,8 +674,11 @@ const YearlyStatsWidget = ({ yearlyStats, isLight }) => {
 
   const fmtDate = (d) => {
     if (!d) return null;
-    const [y, m, day] = d.split("-");
-    return `${day}/${m}/${y}`;
+    const [datePart, timePart] = d.split(" ");
+    const [y, m, day] = datePart.split("-");
+    const date = `${day}/${m}/${y}`;
+    if (timePart && timePart !== "00:00") return `${date} ${timePart}`;
+    return date;
   };
 
   const sorted = [...yearlyStats.years].sort((a, b) => a.year - b.year);
@@ -704,65 +707,55 @@ const YearlyStatsWidget = ({ yearlyStats, isLight }) => {
                 style={{ borderBottom: `1px solid ${borderColor}` }}
               >
                 <td style={{ color: textMain, fontWeight: 600 }}>{y.year}</td>
-                <td
-                  data-label="T. Max"
-                  style={{
-                    color: "#ff7675",
-                    cursor: y.tempMaxDate ? "help" : "default",
-                  }}
-                  title={fmtDate(y.tempMaxDate) ?? undefined}
-                >
+                <td style={{ color: "#ff7675" }}>
                   {y.tempMax != null
                     ? `${parseFloat(y.tempMax).toFixed(1)}°C`
                     : "—"}
+                  {y.tempMaxDate && (
+                    <span className="yearly-stat-date">
+                      {fmtDate(y.tempMaxDate)}
+                    </span>
+                  )}
                 </td>
-                <td
-                  data-label="T. Min"
-                  style={{
-                    color: "#74b9ff",
-                    cursor: y.tempMinDate ? "help" : "default",
-                  }}
-                  title={fmtDate(y.tempMinDate) ?? undefined}
-                >
+                <td style={{ color: "#74b9ff" }}>
                   {y.tempMin != null
                     ? `${parseFloat(y.tempMin).toFixed(1)}°C`
                     : "—"}
+                  {y.tempMinDate && (
+                    <span className="yearly-stat-date">
+                      {fmtDate(y.tempMinDate)}
+                    </span>
+                  )}
                 </td>
-                <td
-                  data-label="Vento"
-                  style={{
-                    color: textMain,
-                    cursor: y.windMaxDate ? "help" : "default",
-                  }}
-                  title={fmtDate(y.windMaxDate) ?? undefined}
-                >
+                <td style={{ color: textMain }}>
                   {y.windMax != null
                     ? `${parseFloat(y.windMax).toFixed(1)} km/h`
                     : "—"}
+                  {y.windMaxDate && (
+                    <span className="yearly-stat-date">
+                      {fmtDate(y.windMaxDate)}
+                    </span>
+                  )}
                 </td>
-                <td
-                  data-label="Raffica"
-                  style={{
-                    color: textMain,
-                    cursor: y.windGustMaxDate ? "help" : "default",
-                  }}
-                  title={fmtDate(y.windGustMaxDate) ?? undefined}
-                >
+                <td style={{ color: textMain }}>
                   {y.windGustMax != null
                     ? `${parseFloat(y.windGustMax).toFixed(1)} km/h`
                     : "—"}
+                  {y.windGustMaxDate && (
+                    <span className="yearly-stat-date">
+                      {fmtDate(y.windGustMaxDate)}
+                    </span>
+                  )}
                 </td>
-                <td
-                  data-label="Pioggia"
-                  style={{
-                    color: "#0984e3",
-                    cursor: y.rainMaxDate ? "help" : "default",
-                  }}
-                  title={fmtDate(y.rainMaxDate) ?? undefined}
-                >
+                <td style={{ color: "#74b9ff" }}>
                   {y.rainMax != null
                     ? `${parseFloat(y.rainMax).toFixed(1)} mm`
                     : "—"}
+                  {y.rainMaxDate && (
+                    <span className="yearly-stat-date">
+                      {fmtDate(y.rainMaxDate)}
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

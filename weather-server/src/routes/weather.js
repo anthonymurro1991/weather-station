@@ -95,7 +95,7 @@ async function getYearlyStats(year) {
 
   for (const obs of allObs) {
     const m = obs.metric || {};
-    const d = (obs.obsTimeLocal || obs.obsTimeUtc || "").slice(0, 10);
+    const d = (obs.obsTimeLocal || obs.obsTimeUtc || "").slice(0, 16);
     // /history/daily restituisce già riepiloghi giornalieri con High/Low
     if (m.tempHigh != null && (tempMax == null || m.tempHigh > tempMax)) {
       tempMax = m.tempHigh;
