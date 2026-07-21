@@ -208,3 +208,40 @@ Dalla categoria canonica vengono estratti tre valori:
 | `snow`                                       | `snow`            | —                                            | `snow`                    |
 
 Tutti i valori calcolati vengono inclusi nel JSON restituito dall'endpoint `GET /api/weather/all` e letti direttamente dal frontend React.
+
+---
+
+## Come funziona lo Storm Tracker
+
+Lo Storm Tracker è un pannello che, ogni 2 minuti, controlla se c'è un temporale in arrivo in un raggio di 50 km attorno alla stazione e stima distanza, direzione, velocità, tendenza, tempo di arrivo, rischio grandine e raffiche stimate.
+
+**In parole semplici:** è come avere un amico che guarda il cielo intorno a casa ogni 2 minuti e ti dice se c'è pioggia/temporale nei dintorni, da che parte si trova, se si sta avvicinando o allontanando, se sta peggiorando o migliorando, e — se punta verso di te — tra quanto tempo arriva.
+
+**Limiti dichiarati (nessuna funzionalità nascosta o esagerata):**
+
+- **Grandine**: è una stima euristica basata su CAPE/codice meteo/zero termico, non una rilevazione radar diretta.
+- **Raffiche**: è il forecast orario diretto di Open-Meteo (`wind_gusts_10m`), non una stima nostra né una misura reale.
+- **Non è un radar pixel-per-pixel**: usa dati di precipitazione numerici (Open-Meteo) campionati su una griglia di punti, non immagini radar vere. Risoluzione tipica ~16 km.
+- **Fulmini**: non inclusi. Non esiste una fonte gratuita e ufficiale di dati fulmini in tempo reale, quindi il campo è stato rimosso invece di mostrare un placeholder sempre vuoto.
+
+### Architettura (`weather-server/src/stormTracking/`)
+
+| File                      | Ruolo                                                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `geoGrid.js`              | Genera la griglia di coordinate attorno alla stazione (7×7 punti, raggio 50km) e le funzioni geografiche di base (distanza haversine, bearing, punto cardinale)          |
+| `openMeteoClient.js`      | Un'unica chiamata HTTP a Open-Meteo (gratis, no API key) per ottenere precipitazione ogni 15 min (passata + adesso) e CAPE/raffiche/zero termico/codice meteo orari      |
+| `cellDetector.js`         | Rileva le "celle" di precipitazione attiva in un frame: raggruppa per contiguità (flood-fill) i punti griglia sopra soglia e ne calcola il centroide pesato              |
+| `cellTracker.js`          | Traccia la cella più vicina alla stazione nel tempo (frame per frame) per calcolare distanza, direzione, velocità di moto, tendenza ed ETA (proiezione lineare del moto) |
+| `hailEstimator.js`        | Stima euristica del rischio grandine e classificazione del CAPE                                                                                                          |
+| `stormTrackingService.js` | Orchestratore: mette insieme tutti i moduli e produce la risposta finale                                                                                                 |
+
+La route `GET /api/stormtracking` (`weather-server/src/routes/stormtracking.js`) espone il risultato con una cache di 2 minuti, e il frontend lo mostra nel componente `weather-frontend/src/StormTracker.js`, sotto la mappa radar Windy.
+
+### Flusso in sintesi
+
+1. **Griglia**: si generano 49 punti lat/lon attorno alla stazione (raggio 50 km).
+2. **Dati**: un'unica chiamata a Open-Meteo restituisce, per tutti i 49 punti insieme, la pioggia ogni 15 minuti (ultimi 90 minuti + adesso).
+3. **Rilevamento celle**: per ogni istante, i punti con pioggia sopra soglia vengono raggruppati in "celle" (aree di pioggia attiva contigue).
+4. **Tracking**: si segue la cella più vicina alla stazione tra un frame e il successivo, per stimare la sua velocità e direzione di moto.
+5. **Proiezione**: si estrapola linearmente il movimento futuro per stimare se/quando la cella arriverà entro 15 km dalla stazione (ETA) o quanto si avvicinerà al massimo.
+6. **Grandine/CAPE**: calcolati con un'euristica separata basata sui dati orari di Open-Meteo nel punto centrale (la stazione). Le **raffiche** invece sono prese direttamente dal forecast orario di Open-Meteo, senza calcoli aggiuntivi.

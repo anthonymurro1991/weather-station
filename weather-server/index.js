@@ -13,6 +13,7 @@ import express from "express";
 import cors from "cors";
 import { PORT, STATION_ID, corsOptions } from "./src/config.js";
 import weatherRouter from "./src/routes/weather.js";
+import stormtrackingRouter from "./src/routes/stormtracking.js";
 
 const app = express();
 
@@ -21,13 +22,17 @@ app.use(cors(corsOptions));
 
 // Route API meteo
 app.use("/api/weather", weatherRouter);
+app.use("/api/stormtracking", stormtrackingRouter);
 
 // Health check – verifica che il server sia attivo
 app.get("/", (req, res) => {
   res.json({
     status: "online",
     message: "Meteo Murro API Server",
-    endpoints: { unified: "/api/weather/all" },
+    endpoints: {
+      unified: "/api/weather/all",
+      stormtracking: "/api/stormtracking",
+    },
     version: "1.0.0",
   });
 });

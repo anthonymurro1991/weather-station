@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./App.css";
 import RadarMap from "./RadarMap";
+import StormTracker from "./StormTracker";
 import {
   WiDaySunny,
   WiCloud,
@@ -1205,6 +1206,7 @@ function App() {
         </div>
 
         <RadarMap />
+        <StormTracker />
       </main>
     </div>
   );
