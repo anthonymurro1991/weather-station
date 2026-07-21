@@ -35,6 +35,7 @@ import { fetchGridData } from "./openMeteoClient.js";
 import { detectCells } from "./cellDetector.js";
 import { trackPrimaryCell } from "./cellTracker.js";
 import { classifyCape, estimateHailRisk } from "./hailEstimator.js";
+import { reverseGeocode } from "./reverseGeocode.js";
 
 /** Trova l'indice del timestamp minutely_15 più vicino all'istante attuale. */
 function findNowIndex(times) {
@@ -69,7 +70,7 @@ function buildStatus({ cellInfo, hail }) {
   if (cellInfo.etaMinutes != null || cellInfo.distanceKm <= 15) {
     return { level: "warning", label: "TEMPORALE IN AVVICINAMENTO" };
   }
-  return { level: "watch", label: "CELLA RILEVATA IN AREA" };
+  return { level: "watch", label: "CELLA ISOLATA, NON IN AVVICINAMENTO" };
 }
 
 export async function getStormTrackingSnapshot() {
@@ -105,6 +106,13 @@ export async function getStormTrackingSnapshot() {
     STATION_LAT,
     STATION_LON,
   );
+
+  if (cellInfo) {
+    cellInfo.placeName = await reverseGeocode(
+      cellInfo.centroidLat,
+      cellInfo.centroidLon,
+    );
+  }
 
   // Il punto centrale della griglia coincide con la stazione (vedi buildGrid)
   const half = Math.floor(STORM_GRID_SIZE / 2);

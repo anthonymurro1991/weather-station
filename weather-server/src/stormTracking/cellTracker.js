@@ -146,6 +146,8 @@ export function trackPrimaryCell(
     distanceKm,
     directionFromHomeDeg,
     directionFromHomeCompass: compassPoint(directionFromHomeDeg),
+    centroidLat: nearestNow.cell.centroidLat,
+    centroidLon: nearestNow.cell.centroidLon,
     speedKmh,
     movingTowardDeg,
     movingTowardCompass:

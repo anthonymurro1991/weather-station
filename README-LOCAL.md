@@ -223,6 +223,7 @@ Lo Storm Tracker è un pannello che, ogni 2 minuti, controlla se c'è un tempora
 - **Raffiche**: è il forecast orario diretto di Open-Meteo (`wind_gusts_10m`), non una stima nostra né una misura reale.
 - **Non è un radar pixel-per-pixel**: usa dati di precipitazione numerici (Open-Meteo) campionati su una griglia di punti, non immagini radar vere. Risoluzione tipica ~16 km.
 - **Fulmini**: non inclusi. Non esiste una fonte gratuita e ufficiale di dati fulmini in tempo reale, quindi il campo è stato rimosso invece di mostrare un placeholder sempre vuoto.
+- **Posizione cella**: il nome della località è approssimativo (reverse geocoding gratuito OpenStreetMap/Nominatim, livello città/paese), coerente con la risoluzione reale della griglia (~16 km). Se il servizio non risponde si mostrano solo le coordinate.
 
 ### Architettura (`weather-server/src/stormTracking/`)
 
@@ -232,6 +233,7 @@ Lo Storm Tracker è un pannello che, ogni 2 minuti, controlla se c'è un tempora
 | `openMeteoClient.js`      | Un'unica chiamata HTTP a Open-Meteo (gratis, no API key) per ottenere precipitazione ogni 15 min (passata + adesso) e CAPE/raffiche/zero termico/codice meteo orari      |
 | `cellDetector.js`         | Rileva le "celle" di precipitazione attiva in un frame: raggruppa per contiguità (flood-fill) i punti griglia sopra soglia e ne calcola il centroide pesato              |
 | `cellTracker.js`          | Traccia la cella più vicina alla stazione nel tempo (frame per frame) per calcolare distanza, direzione, velocità di moto, tendenza ed ETA (proiezione lineare del moto) |
+| `reverseGeocode.js`       | Risolve le coordinate della cella nel nome della località più vicina (OpenStreetMap Nominatim, gratuito)                                                                 |
 | `hailEstimator.js`        | Stima euristica del rischio grandine e classificazione del CAPE                                                                                                          |
 | `stormTrackingService.js` | Orchestratore: mette insieme tutti i moduli e produce la risposta finale                                                                                                 |
 
@@ -242,6 +244,6 @@ La route `GET /api/stormtracking` (`weather-server/src/routes/stormtracking.js`)
 1. **Griglia**: si generano 49 punti lat/lon attorno alla stazione (raggio 50 km).
 2. **Dati**: un'unica chiamata a Open-Meteo restituisce, per tutti i 49 punti insieme, la pioggia ogni 15 minuti (ultimi 90 minuti + adesso).
 3. **Rilevamento celle**: per ogni istante, i punti con pioggia sopra soglia vengono raggruppati in "celle" (aree di pioggia attiva contigue).
-4. **Tracking**: si segue la cella più vicina alla stazione tra un frame e il successivo, per stimare la sua velocità e direzione di moto.
+4. **Tracking**: si segue la cella più vicina alla stazione tra un frame e il successivo, per stimare la sua velocità e direzione di moto. Il centroide della cella attuale viene anche convertito nel nome della località più vicina (reverse geocoding).
 5. **Proiezione**: si estrapola linearmente il movimento futuro per stimare se/quando la cella arriverà entro 15 km dalla stazione (ETA) o quanto si avvicinerà al massimo.
 6. **Grandine/CAPE**: calcolati con un'euristica separata basata sui dati orari di Open-Meteo nel punto centrale (la stazione). Le **raffiche** invece sono prese direttamente dal forecast orario di Open-Meteo, senza calcoli aggiuntivi.

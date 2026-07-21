@@ -102,6 +102,15 @@ export default function StormTracker() {
       <div className="storm-rows">
         <Row label="Situazione" value={situazione} />
         <Row
+          label="Posizione cella"
+          value={
+            cell
+              ? (cell.placeName ??
+                `${cell.centroidLat.toFixed(2)}, ${cell.centroidLon.toFixed(2)}`)
+              : "N/D"
+          }
+        />
+        <Row
           label="Distanza"
           value={cell ? `${cell.distanceKm.toFixed(1)} km` : "N/D"}
         />
