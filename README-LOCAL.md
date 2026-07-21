@@ -222,8 +222,10 @@ Lo Storm Tracker è un pannello che, ogni 2 minuti, controlla se c'è un tempora
 - **Grandine**: è una stima euristica basata su CAPE/codice meteo/zero termico, non una rilevazione radar diretta.
 - **Raffiche**: è il forecast orario diretto di Open-Meteo (`wind_gusts_10m`), non una stima nostra né una misura reale. Viene mostrato solo se è presente una cella attiva ed è riferito alla posizione della cella, non alla stazione — se non c'è nessuna cella è "N/D".
 - **Non è un radar pixel-per-pixel**: usa dati di precipitazione numerici (Open-Meteo) campionati su una griglia di punti, non immagini radar vere. Risoluzione tipica ~16 km.
+- **Dati di modello, non osservazioni reali**: Open-Meteo non misura la pioggia nel punto richiesto, ma restituisce l'output di un modello meteorologico numerico (per l'Europa centrale, i dati ogni 15 minuti si basano su DWD ICON-D2/Météo-France AROME, interpolati altrove), come dichiarato nella loro [documentazione ufficiale](https://open-meteo.com/en/docs) ("Open-Meteo combines weather model output from multiple national weather services..."). Questo significa che il sistema può "vedere" una cella di pioggia stimata dal modello anche dove il radar reale non ne mostra alcuna, o viceversa.
 - **Fulmini**: non inclusi. Non esiste una fonte gratuita e ufficiale di dati fulmini in tempo reale, quindi il campo è stato rimosso invece di mostrare un placeholder sempre vuoto.
 - **Posizione cella**: il nome della località è approssimativo (reverse geocoding gratuito OpenStreetMap/Nominatim, livello città/paese), coerente con la risoluzione reale della griglia (~16 km). Se il servizio non risponde si mostrano solo le coordinate.
+- **Tracciamento della cella tra i frame**: non è un riconoscimento "di identità" (nessuna forma/firma di riflettività confrontata) — si assume semplicemente che, tra un frame e il successivo (15 min prima), la cella più vicina in linea d'aria alla posizione precedente sia la stessa cella, purché non sia più lontana di 40 km (velocità massima plausibile ~160 km/h). Se due celle diverse e non correlate si trovano entro questa distanza, l'algoritmo può agganciare quella sbagliata.
 
 ### Architettura (`weather-server/src/stormTracking/`)
 
@@ -244,9 +246,16 @@ La route `GET /api/stormtracking` (`weather-server/src/routes/stormtracking.js`)
 1. **Griglia**: si generano 49 punti lat/lon attorno alla stazione (raggio 50 km).
 2. **Dati**: un'unica chiamata a Open-Meteo restituisce, per tutti i 49 punti insieme, la pioggia ogni 15 minuti (ultimi 90 minuti + adesso).
 3. **Rilevamento celle**: per ogni istante, i punti con pioggia sopra soglia vengono raggruppati in "celle" (aree di pioggia attiva contigue).
-4. **Tracking**: si segue la cella più vicina alla stazione tra un frame e il successivo, per stimare la sua velocità e direzione di moto. Il centroide della cella attuale viene anche convertito nel nome della località più vicina (reverse geocoding).
+4. **Tracking**: partendo dalla cella più vicina alla stazione nel frame attuale, si risale indietro nel tempo frame per frame (fino a 90 minuti fa), agganciando ad ogni passo la cella con il centroide più vicino a quella del frame successivo (senza superare un salto di 40 km, oltre il quale il match viene scartato per non rischiare di seguire una cella diversa). Confrontando solo la posizione più vecchia agganciata e quella attuale si calcolano:
+   - **velocità** = distanza percorsa (km) ÷ minuti trascorsi × 60
+   - **direzione di moto** = bearing geografico (rotta) dal punto vecchio al punto nuovo, poi arrotondato al punto cardinale più vicino (N/NE/E/SE/S/SO/O/NO)
+
+   Il centroide della cella attuale viene anche convertito nel nome della località più vicina (reverse geocoding).
+
 5. **Proiezione**: si estrapola linearmente il movimento futuro per stimare se/quando la cella arriverà entro 15 km dalla stazione (ETA) o quanto si avvicinerà al massimo.
 6. **Grandine/CAPE**: calcolati con un'euristica separata basata sui dati orari di Open-Meteo nel punto centrale (la stazione). Le **raffiche** invece sono prese direttamente dal forecast orario di Open-Meteo, senza calcoli aggiuntivi.
+
+**In sintesi**: per ogni frame (ogni "foto" di pioggia ogni 15 minuti) il sistema trova tutte le celle attive in quel frame con le loro coordinate (centroide lat/lon), e usa **solo quelle coordinate** — quella della cella più vecchia agganciata e quella della cella più recente — per calcolare distanza percorsa, velocità e direzione. Tutto si basa esclusivamente su quali celle vengono rilevate in ciascun frame e sulla loro posizione geografica: nessun altro dato (forma della cella, vento, intensità nel percorso) entra nel calcolo di velocità/direzione.
 
 ## Come funziona il widget Qualità dell'Aria
 
