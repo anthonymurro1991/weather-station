@@ -3,6 +3,7 @@ import axios from "axios";
 import "./App.css";
 import RadarMap from "./RadarMap";
 import StormTracker from "./StormTracker";
+import AirQuality from "./AirQuality";
 import {
   WiDaySunny,
   WiCloud,
@@ -1203,10 +1204,13 @@ function App() {
             <YearlyStatsWidget yearlyStats={yearlyStats} isLight={isLight} />
           )}
           <AlertsWidget alerts={weatherData?.alerts} />
+          <AirQuality />
         </div>
 
-        <RadarMap />
-        <StormTracker />
+        <div className="radar-storm-row">
+          <RadarMap />
+          <StormTracker />
+        </div>
       </main>
     </div>
   );

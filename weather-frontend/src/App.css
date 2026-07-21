@@ -651,6 +651,37 @@ body {
 .alert-label {
   flex: 1;
 }
+
+.aqi-badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  width: fit-content;
+}
+
+.aqi-badge--good {
+  background: rgba(80, 220, 100, 0.25);
+  border: 1.5px solid rgba(80, 220, 100, 0.85);
+  color: #a5f3b8;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.aqi-badge--moderate {
+  background: rgba(255, 140, 40, 0.35);
+  border: 1.5px solid rgba(255, 140, 40, 0.85);
+  color: #ffcc80;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.aqi-badge--bad {
+  background: rgba(255, 60, 60, 0.35);
+  border: 1.5px solid rgba(255, 60, 60, 0.85);
+  color: #ff8a80;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 .sun-arc-container {
@@ -824,6 +855,18 @@ body {
   gap: 0.1rem;
 }
 
+.metric-value--aqi-good {
+  color: #22c55e;
+}
+
+.metric-value--aqi-moderate {
+  color: #f97316;
+}
+
+.metric-value--aqi-bad {
+  color: #ef4444;
+}
+
 .stat-label {
   font-size: 0.7rem;
   color: var(--text-color-faint);
@@ -838,6 +881,40 @@ body {
 }
 
 /* ── Radar map card ─────────────────────────────────────────────────── */
+.radar-storm-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 1300px) {
+  .radar-storm-row {
+    flex-direction: row;
+    align-items: stretch;
+    max-width: 1760px;
+    gap: 1.5rem;
+  }
+
+  .radar-storm-row .radar-card,
+  .radar-storm-row .storm-tracker-card {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .radar-storm-row .radar-card {
+    flex: 2.4 1 0;
+  }
+
+  .radar-storm-row .storm-tracker-card {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
 .radar-card {
   margin: 1.5rem auto;
   max-width: 860px;

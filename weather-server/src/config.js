@@ -28,6 +28,10 @@ export const STORM_GRID_SIZE = parseInt(process.env.STORM_GRID_SIZE, 10) || 7;
 export const STORM_REFRESH_MINUTES =
   parseFloat(process.env.STORM_REFRESH_MINUTES) || 2;
 
+// Qualità dell'aria (European AQI): cambia lentamente, cache più lunga dello storm tracker
+export const AIR_QUALITY_REFRESH_MINUTES =
+  parseFloat(process.env.AIR_QUALITY_REFRESH_MINUTES) || 15;
+
 // Opzioni CORS: in produzione accetta solo il dominio del frontend deployato
 export const corsOptions = {
   origin:

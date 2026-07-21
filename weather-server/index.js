@@ -14,6 +14,7 @@ import cors from "cors";
 import { PORT, STATION_ID, corsOptions } from "./src/config.js";
 import weatherRouter from "./src/routes/weather.js";
 import stormtrackingRouter from "./src/routes/stormtracking.js";
+import airqualityRouter from "./src/routes/airquality.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(cors(corsOptions));
 // Route API meteo
 app.use("/api/weather", weatherRouter);
 app.use("/api/stormtracking", stormtrackingRouter);
+app.use("/api/airquality", airqualityRouter);
 
 // Health check – verifica che il server sia attivo
 app.get("/", (req, res) => {
@@ -32,6 +34,7 @@ app.get("/", (req, res) => {
     endpoints: {
       unified: "/api/weather/all",
       stormtracking: "/api/stormtracking",
+      airquality: "/api/airquality",
     },
     version: "1.0.0",
   });

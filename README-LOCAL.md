@@ -247,3 +247,22 @@ La route `GET /api/stormtracking` (`weather-server/src/routes/stormtracking.js`)
 4. **Tracking**: si segue la cella più vicina alla stazione tra un frame e il successivo, per stimare la sua velocità e direzione di moto. Il centroide della cella attuale viene anche convertito nel nome della località più vicina (reverse geocoding).
 5. **Proiezione**: si estrapola linearmente il movimento futuro per stimare se/quando la cella arriverà entro 15 km dalla stazione (ETA) o quanto si avvicinerà al massimo.
 6. **Grandine/CAPE**: calcolati con un'euristica separata basata sui dati orari di Open-Meteo nel punto centrale (la stazione). Le **raffiche** invece sono prese direttamente dal forecast orario di Open-Meteo, senza calcoli aggiuntivi.
+
+## Come funziona il widget Qualità dell'Aria
+
+Un pannello aggiuntivo (`weather-frontend/src/AirQuality.js`) mostra l'**European AQI** (indice europeo di qualità dell'aria) e i principali inquinanti (PM2.5, PM10, ozono, biossido di azoto, biossido di zolfo, monossido di carbonio) nel punto della stazione.
+
+**Fonte dati**: [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api) — gratuita, nessuna API key richiesta, nessun calcolo nostro: i valori (compreso l'AQI) sono presi così come li restituisce il servizio.
+
+**Fasce European AQI** (ufficiali, definite dal servizio Copernicus CAMS/EEA):
+
+| AQI    | Livello              |
+| ------ | -------------------- |
+| 0–20   | Buona                |
+| 20–40  | Discreta             |
+| 40–60  | Scadente             |
+| 60–80  | Cattiva              |
+| 80–100 | Molto cattiva        |
+| >100   | Estremamente cattiva |
+
+**Architettura**: `weather-server/src/airQuality/airQualityService.js` interroga l'API per le coordinate della stazione; la route `GET /api/airquality` (`weather-server/src/routes/airquality.js`) espone il risultato con una cache di 15 minuti (la qualità dell'aria cambia molto più lentamente della pioggia, non serve un refresh frequente come lo storm tracker).
