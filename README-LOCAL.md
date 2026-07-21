@@ -220,7 +220,7 @@ Lo Storm Tracker è un pannello che, ogni 2 minuti, controlla se c'è un tempora
 **Limiti dichiarati (nessuna funzionalità nascosta o esagerata):**
 
 - **Grandine**: è una stima euristica basata su CAPE/codice meteo/zero termico, non una rilevazione radar diretta.
-- **Raffiche**: è il forecast orario diretto di Open-Meteo (`wind_gusts_10m`), non una stima nostra né una misura reale.
+- **Raffiche**: è il forecast orario diretto di Open-Meteo (`wind_gusts_10m`), non una stima nostra né una misura reale. Viene mostrato solo se è presente una cella attiva ed è riferito alla posizione della cella, non alla stazione — se non c'è nessuna cella è "N/D".
 - **Non è un radar pixel-per-pixel**: usa dati di precipitazione numerici (Open-Meteo) campionati su una griglia di punti, non immagini radar vere. Risoluzione tipica ~16 km.
 - **Fulmini**: non inclusi. Non esiste una fonte gratuita e ufficiale di dati fulmini in tempo reale, quindi il campo è stato rimosso invece di mostrare un placeholder sempre vuoto.
 - **Posizione cella**: il nome della località è approssimativo (reverse geocoding gratuito OpenStreetMap/Nominatim, livello città/paese), coerente con la risoluzione reale della griglia (~16 km). Se il servizio non risponde si mostrano solo le coordinate.

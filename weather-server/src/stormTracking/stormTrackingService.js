@@ -15,7 +15,8 @@
 // LIMITI NOTI (dichiarati esplicitamente, non nascosti):
 //   - Grandine è una stima euristica da CAPE/codice meteo/zero termico, non
 //     una rilevazione radar diretta. Le raffiche invece sono il forecast
-//     orario di Open-Meteo (wind_gusts_10m), preso così com'è.
+//     orario di Open-Meteo (wind_gusts_10m), preso così com'è, riferito alla
+//     posizione della cella tracciata (N/D se nessuna cella è attiva).
 //   - I fulmini non sono inclusi: nessuna fonte gratuita ufficiale affidabile
 //     era disponibile, quindi il campo è stato rimosso invece di mostrare un
 //     placeholder sempre vuoto.
@@ -36,6 +37,21 @@ import { detectCells } from "./cellDetector.js";
 import { trackPrimaryCell } from "./cellTracker.js";
 import { classifyCape, estimateHailRisk } from "./hailEstimator.js";
 import { reverseGeocode } from "./reverseGeocode.js";
+import { haversineKm } from "./geoGrid.js";
+
+/** Trova, tra i punti della griglia, quello più vicino a un punto lat/lon dato. */
+function findNearestGridIndex(gridPoints, lat, lon) {
+  let bestIdx = 0;
+  let bestDist = Infinity;
+  gridPoints.forEach((p, idx) => {
+    const d = haversineKm(lat, lon, p.lat, p.lon);
+    if (d < bestDist) {
+      bestDist = d;
+      bestIdx = idx;
+    }
+  });
+  return bestIdx;
+}
 
 /** Trova l'indice del timestamp minutely_15 più vicino all'istante attuale. */
 function findNowIndex(times) {
@@ -135,10 +151,23 @@ export async function getStormTrackingSnapshot() {
   const hourIdx = findNearestHourIndex(hourlyTimes);
 
   const capeJkg = centerData?.hourly?.cape?.[hourIdx] ?? null;
-  const gustKmh = centerData?.hourly?.wind_gusts_10m?.[hourIdx] ?? null;
   const freezingLevelM =
     centerData?.hourly?.freezinglevel_height?.[hourIdx] ?? null;
   const weathercode = centerData?.hourly?.weathercode?.[hourIdx] ?? null;
+
+  // La raffica stimata si riferisce alla posizione della cella tracciata (non
+  // alla stazione): senza una cella attiva non ha senso mostrarla, resta N/D.
+  let gustKmh = null;
+  if (cellInfo) {
+    const cellGridIdx = findNearestGridIndex(
+      gridPoints,
+      cellInfo.centroidLat,
+      cellInfo.centroidLon,
+    );
+    const cellData = gridResults[cellGridIdx];
+    const cellHourIdx = findNearestHourIndex(cellData?.hourly?.time || []);
+    gustKmh = cellData?.hourly?.wind_gusts_10m?.[cellHourIdx] ?? null;
+  }
 
   const hail = estimateHailRisk({ weathercode, capeJkg, freezingLevelM });
   const status = buildStatus({ cellInfo, hail });
