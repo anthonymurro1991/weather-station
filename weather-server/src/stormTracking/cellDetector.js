@@ -11,8 +11,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Soglia minima di precipitazione (mm/15min) per considerare un punto "attivo".
-// 0.3mm/15min ≈ 1.2mm/h: pioggia da debole a moderata.
-export const ACTIVE_THRESHOLD_MM = 0.3;
+// 1.0mm/15min = 4mm/h: pioggia moderata/forte (alzata da 0.3 per ridurre i
+// falsi positivi da "rumore" del modello su piogge molto deboli/isolate).
+export const ACTIVE_THRESHOLD_MM = 1.0;
 
 /**
  * @param {Array<{row:number, col:number, lat:number, lon:number}>} gridPoints
