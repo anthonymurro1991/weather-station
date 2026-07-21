@@ -59,7 +59,7 @@ function findNearestHourIndex(times) {
 }
 
 function buildStatus({ cellInfo, hail }) {
-  if (!cellInfo) return { level: "ok", label: "TUTTO OK" };
+  if (!cellInfo) return { level: "ok", label: "NESSUNA ALLERTA" };
 
   if (
     hail.risk === "probabile" ||
@@ -70,7 +70,10 @@ function buildStatus({ cellInfo, hail }) {
   if (cellInfo.etaMinutes != null || cellInfo.distanceKm <= 15) {
     return { level: "warning", label: "TEMPORALE IN AVVICINAMENTO" };
   }
-  return { level: "watch", label: "CELLA ISOLATA, NON IN AVVICINAMENTO" };
+  return {
+    level: "watch",
+    label: `CELLA PIÙ VICINA A ${Math.round(cellInfo.distanceKm)} KM`,
+  };
 }
 
 export async function getStormTrackingSnapshot() {
@@ -93,6 +96,13 @@ export async function getStormTrackingSnapshot() {
   for (let t = 0; t <= nowIndex; t++) {
     const intensityByKey = new Map();
     gridPoints.forEach((p, idx) => {
+      // La griglia è quadrata: gli angoli distano fino a ~raggio*√2 dal
+      // centro (es. ~71km per un raggio di 50km). Escludiamo i punti oltre
+      // il raggio dichiarato per rispettare davvero il limite STORM_RADIUS_KM.
+      if (p.distanceFromCenterKm > STORM_RADIUS_KM) {
+        intensityByKey.set(`${p.row},${p.col}`, 0);
+        return;
+      }
       const val = gridResults[idx]?.minutely_15?.precipitation?.[t] ?? 0;
       intensityByKey.set(`${p.row},${p.col}`, val);
     });

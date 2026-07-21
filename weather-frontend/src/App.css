@@ -976,6 +976,11 @@ body {
   text-align: right;
 }
 
+.storm-row-value--ok {
+  color: #22c55e;
+  font-weight: 700;
+}
+
 .storm-error {
   padding: 1rem;
   text-align: center;

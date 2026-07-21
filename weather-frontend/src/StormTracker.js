@@ -18,11 +18,11 @@ function formatMinutes(min) {
   return `${Math.round(min)} min`;
 }
 
-function Row({ label, value }) {
+function Row({ label, value, valueClassName }) {
   return (
     <div className="storm-row">
       <span className="storm-row-label">{label}</span>
-      <span className="storm-row-value">{value}</span>
+      <span className={`storm-row-value ${valueClassName || ""}`}>{value}</span>
     </div>
   );
 }
@@ -100,7 +100,11 @@ export default function StormTracker() {
       </div>
 
       <div className="storm-rows">
-        <Row label="Situazione" value={situazione} />
+        <Row
+          label="Situazione"
+          value={situazione}
+          valueClassName={!cell ? "storm-row-value--ok" : ""}
+        />
         <Row
           label="Posizione cella"
           value={
