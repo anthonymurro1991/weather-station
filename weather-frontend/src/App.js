@@ -16,6 +16,7 @@ import {
   WiSnowflakeCold,
   WiUmbrella,
   WiNightClear,
+  WiThunderstorm,
 } from "react-icons/wi";
 import {
   AreaChart,
@@ -458,6 +459,7 @@ const AlertsWidget = ({ alerts }) => {
     return (
       <div className="weather-metric alerts-widget alerts-none">
         <div className="metric-header">
+          <WiThunderstorm />
           <span>Allerte meteo</span>
         </div>
         <span className="alert-ok-label">Nessun alert previsto</span>
@@ -468,6 +470,7 @@ const AlertsWidget = ({ alerts }) => {
   return (
     <div className="weather-metric alerts-widget">
       <div className="metric-header">
+        <WiThunderstorm />
         <span>Allerte meteo</span>
       </div>
       <div className="alerts-list">
@@ -1200,11 +1203,11 @@ function App() {
             decimals={1}
           />
           {weatherData?.solar && <SunMoonWidget solar={weatherData.solar} />}
+          <AirQuality />
+          <AlertsWidget alerts={weatherData?.alerts} />
           {yearlyStats?.years?.length > 0 && (
             <YearlyStatsWidget yearlyStats={yearlyStats} isLight={isLight} />
           )}
-          <AlertsWidget alerts={weatherData?.alerts} />
-          <AirQuality />
         </div>
 
         <div className="radar-storm-row">

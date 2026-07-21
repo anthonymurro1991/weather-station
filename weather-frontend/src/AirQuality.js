@@ -5,6 +5,7 @@
 // normale weather-metric: solo numero (AQI) e descrizione (es. "Buona").
 
 import React, { useState, useEffect, useCallback } from "react";
+import { WiSmoke } from "react-icons/wi";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
 // La qualità dell'aria cambia lentamente: il backend ha già una cache di
@@ -37,6 +38,7 @@ export default function AirQuality() {
     return (
       <div className="weather-metric">
         <div className="metric-header">
+          <WiSmoke />
           <span>Qualità dell'Aria</span>
         </div>
         <div className="metric-value">N/D</div>
@@ -57,6 +59,7 @@ export default function AirQuality() {
   return (
     <div className="weather-metric">
       <div className="metric-header">
+        <WiSmoke />
         <span>Qualità dell'Aria</span>
       </div>
       <div className={`metric-value metric-value--aqi-${level}`}>
