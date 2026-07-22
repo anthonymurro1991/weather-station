@@ -173,10 +173,10 @@ export default function StormTracker() {
       </div>
 
       <div className="storm-attribution">
+        ICON-D2/AROME ·{" "}
         <a href="https://open-meteo.com" target="_blank" rel="noreferrer">
           Open-Meteo
-        </a>{" "}
-        (ICON-D2/AROME) · Grandine: stima
+        </a>
       </div>
     </div>
   );

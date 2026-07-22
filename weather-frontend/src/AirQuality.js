@@ -72,7 +72,7 @@ export default function AirQuality() {
       </div>
 
       <div className="storm-attribution">
-        AQI Europeo ·{" "}
+        AQI ·{" "}
         <a href="https://open-meteo.com" target="_blank" rel="noreferrer">
           Open-Meteo
         </a>

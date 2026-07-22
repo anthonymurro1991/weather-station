@@ -464,10 +464,10 @@ const AlertsWidget = ({ alerts }) => {
         </div>
         <span className="alert-ok-label">Nessun alert previsto</span>
         <div className="storm-attribution">
+          ARPAE ·{" "}
           <a href="https://open-meteo.com" target="_blank" rel="noreferrer">
             Open-Meteo
-          </a>{" "}
-          (ItaliaMeteo-ARPAE)
+          </a>
         </div>
       </div>
     );
@@ -488,10 +488,10 @@ const AlertsWidget = ({ alerts }) => {
         ))}
       </div>
       <div className="storm-attribution">
+        ARPAE ·{" "}
         <a href="https://open-meteo.com" target="_blank" rel="noreferrer">
           Open-Meteo
-        </a>{" "}
-        (ItaliaMeteo-ARPAE)
+        </a>
       </div>
     </div>
   );
