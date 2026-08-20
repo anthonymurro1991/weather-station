@@ -36,7 +36,10 @@ export const AIR_QUALITY_REFRESH_MINUTES =
 export const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
-      ? ["https://weather-frontend-9bsl.vercel.app"]
+      ? [
+          "https://weather-frontend-9bsl.vercel.app",
+          "https://weather-frontend-murro1.vercel.app",
+        ]
       : "*",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
