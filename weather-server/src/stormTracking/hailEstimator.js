@@ -27,13 +27,13 @@ export function estimateHailRisk({ weathercode, capeJkg, freezingLevelM }) {
 
   if (weathercode === 99) {
     return freezingLevel < 3500 && cape > 2000
-      ? { risk: "probabile", size: "grande possibile" }
-      : { risk: "probabile", size: "piccola/media possibile" };
+      ? { risk: "probabile", size: "grande" }
+      : { risk: "probabile", size: "piccola/media" };
   }
   if (weathercode === 96) {
     return cape > 2000 && freezingLevel < 3500
-      ? { risk: "possibile", size: "media possibile" }
-      : { risk: "possibile", size: "piccola possibile" };
+      ? { risk: "possibile", size: "media" }
+      : { risk: "possibile", size: "piccola" };
   }
   if (weathercode === 95 && cape > 1500) {
     return { risk: "non esclusa", size: null };
