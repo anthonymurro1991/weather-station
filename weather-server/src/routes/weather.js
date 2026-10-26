@@ -258,4 +258,62 @@ router.get("/yearly-stats", async (req, res) => {
   }
 });
 
+// ── GET /api/weather/same-day-history ────────────────────────────────────────
+// Min/Max del giorno corrente negli anni precedenti (dal 2024 all'anno scorso).
+// I dati passati non cambiano: cache per chiave anno+giorno.
+const sameDayCache = new Map();
+
+async function getSameDayTemps(year, month, day) {
+  const key = `${year}-${month}-${day}`;
+  if (sameDayCache.has(key)) return sameDayCache.get(key);
+
+  const dateStr = fmtDate(new Date(year, month, day));
+  const result = await fetchHistoryDaily(dateStr, dateStr).catch((e) => {
+    console.error(
+      `[same-day] ${dateStr} error:`,
+      e.response?.status,
+      e.message,
+    );
+    return null;
+  });
+  if (!result) return null; // errore: non in cache, riprova alla prossima richiesta
+
+  const m = result.observations?.[0]?.metric;
+  const data = {
+    year,
+    tempMax: m?.tempHigh ?? null,
+    tempMin: m?.tempLow ?? null,
+  };
+  sameDayCache.set(key, data);
+  return data;
+}
+
+router.get("/same-day-history", async (req, res) => {
+  try {
+    const now = new Date();
+    const startYear = 2024;
+    const years = [];
+    for (let y = startYear; y < now.getFullYear(); y++) {
+      const d = new Date(y, now.getMonth(), now.getDate());
+      if (d.getMonth() !== now.getMonth()) continue; // 29 feb in anno non bisestile
+      years.push(y);
+    }
+    const results = await Promise.all(
+      years.map((y) => getSameDayTemps(y, now.getMonth(), now.getDate())),
+    );
+    res.json({
+      years: results.filter(
+        (r) => r && (r.tempMax != null || r.tempMin != null),
+      ),
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({
+        error: "Failed to fetch same-day history",
+        details: err.message,
+      });
+  }
+});
+
 export default router;

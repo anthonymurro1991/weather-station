@@ -781,9 +781,25 @@ const YearlyStatsWidget = ({ yearlyStats, isLight }) => {
   );
 };
 
+// Riga scorrevole con la temperatura dello stesso giorno negli anni precedenti
+const PastYearsRow = ({ years, field }) => {
+  const items = (years || []).filter((y) => y[field] != null);
+  if (!items.length) return null;
+  return (
+    <div className="past-years-row">
+      {items.map((y) => (
+        <div key={y.year} className="past-year-item">
+          <b>{y.year}</b>: {parseFloat(y[field]).toFixed(1)}°C
+        </div>
+      ))}
+    </div>
+  );
+};
+
 function App() {
   const [weatherData, setWeatherData] = useState(null);
   const [yearlyStats, setYearlyStats] = useState(null);
+  const [sameDayHistory, setSameDayHistory] = useState(null);
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const weatherIconRef = useRef(null);
@@ -842,6 +858,23 @@ function App() {
     };
     fetchYearly();
     const interval = setInterval(fetchYearly, 6 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Min/Max del giorno corrente negli anni precedenti (aggiornamento ogni ora)
+  useEffect(() => {
+    const fetchSameDay = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/weather/same-day-history`,
+        );
+        setSameDayHistory(response.data);
+      } catch (err) {
+        console.error("Errore storico stesso giorno:", err);
+      }
+    };
+    fetchSameDay();
+    const interval = setInterval(fetchSameDay, 60 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -1016,36 +1049,48 @@ function App() {
               </div>
               {stats && (
                 <div className="temp-min-max">
-                  <span>
-                    Min:{" "}
-                    {stats.tempMin
-                      ? parseFloat(stats.tempMin).toFixed(1)
-                      : parseFloat(metric.temp).toFixed(1)}
-                    °C
-                    {stats.tempMinTime && (
-                      <span className="time-stamp">
-                        {new Date(stats.tempMinTime).toLocaleTimeString(
-                          "it-IT",
-                          { hour: "2-digit", minute: "2-digit" },
-                        )}
-                      </span>
-                    )}
-                  </span>
-                  <span>
-                    Max:{" "}
-                    {stats.tempMax
-                      ? parseFloat(stats.tempMax).toFixed(1)
-                      : parseFloat(metric.temp).toFixed(1)}
-                    °C
-                    {stats.tempMaxTime && (
-                      <span className="time-stamp">
-                        {new Date(stats.tempMaxTime).toLocaleTimeString(
-                          "it-IT",
-                          { hour: "2-digit", minute: "2-digit" },
-                        )}
-                      </span>
-                    )}
-                  </span>
+                  <div className="temp-col">
+                    <span>
+                      Min:{" "}
+                      {stats.tempMin
+                        ? parseFloat(stats.tempMin).toFixed(1)
+                        : parseFloat(metric.temp).toFixed(1)}
+                      °C
+                      {stats.tempMinTime && (
+                        <span className="time-stamp">
+                          {new Date(stats.tempMinTime).toLocaleTimeString(
+                            "it-IT",
+                            { hour: "2-digit", minute: "2-digit" },
+                          )}
+                        </span>
+                      )}
+                    </span>
+                    <PastYearsRow
+                      years={sameDayHistory?.years}
+                      field="tempMin"
+                    />
+                  </div>
+                  <div className="temp-col">
+                    <span>
+                      Max:{" "}
+                      {stats.tempMax
+                        ? parseFloat(stats.tempMax).toFixed(1)
+                        : parseFloat(metric.temp).toFixed(1)}
+                      °C
+                      {stats.tempMaxTime && (
+                        <span className="time-stamp">
+                          {new Date(stats.tempMaxTime).toLocaleTimeString(
+                            "it-IT",
+                            { hour: "2-digit", minute: "2-digit" },
+                          )}
+                        </span>
+                      )}
+                    </span>
+                    <PastYearsRow
+                      years={sameDayHistory?.years}
+                      field="tempMax"
+                    />
+                  </div>
                 </div>
               )}
               {current.conditions && (

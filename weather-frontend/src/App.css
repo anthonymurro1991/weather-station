@@ -224,10 +224,49 @@ body {
 .temp-min-max {
   display: flex;
   gap: 1.5rem;
+  align-items: flex-start;
   font-size: 1.1rem;
   margin-bottom: 0.8rem;
   color: var(--text-color-sub);
   font-weight: 500;
+}
+
+.temp-col {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+/* width:0 + min-width:100% evita che la riga allarghi la colonna oltre la pillola */
+.past-years-row {
+  display: flex;
+  gap: 0.7rem;
+  width: 0;
+  min-width: 100%;
+  overflow-x: scroll;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.85;
+  padding: 0 0.3rem;
+}
+
+.past-years-row::-webkit-scrollbar {
+  display: none;
+}
+
+.past-year-item {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.past-year-item b {
+  font-weight: 700;
 }
 
 .temp-min-max span {
