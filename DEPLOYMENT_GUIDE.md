@@ -33,7 +33,7 @@ Questa guida ti aiuterà a mettere online la tua applicazione meteo, sia il fron
 
 ### Problema: cold start dopo inattività (piano gratuito)
 
-Sul piano gratuito di Render, il server si **spegne automaticamente dopo 15 minuti di inattività** e impiega 30–60 secondi a ripartire alla prima richiesta. Questo causa un lungo caricamento iniziale dell'app.
+Sul piano gratuito di Render, il server si **spegne automaticamente dopo 15 minuti di inattività** e impiega 30–60 secondi a ripartire alla prima richiesta. Questo causa un lungo caricamento iniziale dell'app..
 
 **Soluzioni pratiche:**
 
