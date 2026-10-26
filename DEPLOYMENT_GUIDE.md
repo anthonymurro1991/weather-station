@@ -21,7 +21,7 @@ Questa guida ti aiuterà a mettere online la tua applicazione meteo, sia il fron
 1. Crea un account su [Render](https://render.com/)
 2. Vai su "New" e seleziona "Web Service"
 3. Collega il tuo repository GitHub o carica i file direttamente
-4. Configura il servizio:
+4. Configura il servizio: 
    - Nome: `meteo-murro-api`
    - Runtime: `Node`
    - Build Command: `npm install`
