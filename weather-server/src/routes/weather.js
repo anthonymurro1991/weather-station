@@ -59,6 +59,8 @@ function buildYearChunks(year) {
 }
 
 async function getYearlyStats(year) {
+  const INVALID_WIND_GUST_VALUES = [138.6];
+
   const key = String(year);
   const now = Date.now();
   const cached = yearlyStatsCache.get(key);
@@ -114,6 +116,7 @@ async function getYearlyStats(year) {
     }
     if (
       m.windgustHigh != null &&
+      !INVALID_WIND_GUST_VALUES.includes(m.windgustHigh) &&
       (windGustMax == null || m.windgustHigh > windGustMax)
     ) {
       windGustMax = m.windgustHigh;
@@ -307,12 +310,10 @@ router.get("/same-day-history", async (req, res) => {
       ),
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        error: "Failed to fetch same-day history",
-        details: err.message,
-      });
+    res.status(500).json({
+      error: "Failed to fetch same-day history",
+      details: err.message,
+    });
   }
 });
 
